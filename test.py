@@ -17,7 +17,7 @@ print("\n=== NORMALIZED ===")
 print(region.normalized)
 
 print("\n=== YOLO ===")
-print(region.to_yolo())
+print(region.yolo_region())
 
 print("\n=== CENTER ===")
 print(region.center)

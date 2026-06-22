@@ -113,9 +113,15 @@ class Box:
     # Adapter shortcuts                                                    #
     # ------------------------------------------------------------------ #
 
-    def to_yolo(self) -> dict:
-        return [self.x1, self.y1, self.x2, self.y2]
-
+    def yolo_region(self) -> list[float]:
+        """[(point1), (point2), (point3), (point4)] """
+        return [
+            (self.x1, self.y1),
+            (self.x2, self.y1),
+            (self.x2, self.y2),
+            (self.x1, self.y2)
+        ]
+    
     def to_raw(self) -> dict:
         """All formats at once — handy for debugging."""
         return {
