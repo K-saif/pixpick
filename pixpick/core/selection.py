@@ -128,6 +128,10 @@ class Box:
             [self.x1, self.y1, self.x2, self.y2]
         ])
 
+    def sam(self):
+        """[(point1), (point2), (point3), (point4)] """
+        return np.array([self.x1, self.y1, self.x2, self.y2])
+
     def to_raw(self) -> dict:
         """All formats at once — handy for debugging."""
         return {
