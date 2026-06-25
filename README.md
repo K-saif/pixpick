@@ -1,25 +1,51 @@
+<div align="center">
+
 # pixpick 🎯
 
-> Interactive coordinate picker for Computer Vision — no external tools needed.
+**Interactive coordinate picker for Computer Vision — no external tools needed.**
 
 [![PyPI version](https://badge.fury.io/py/pixpick.svg)](https://badge.fury.io/py/pixpick)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Every major CV framework needs coordinates before it can run — a crop region, a zone polygon, a prompt box. The standard workflow is: open CVAT or Roboflow, grab coordinates, paste them back into code. Every single time.
+</div>
 
-pixpick eliminates that. Click on the image in Python, get framework-ready coordinates back immediately.
+---
+
+## The problem
+
+Every major CV framework needs coordinates before it can run.
+
+```python
+model.predict("frame.jpg", crop=[120, 80, 640, 480])        # YOLO   — where does this come from?
+predictor.predict(box=np.array([120, 80, 640, 480]))         # SAM2   — same problem
+```
+
+The standard workflow: open CVAT or Roboflow → grab coordinates → paste them back into code. Every. Single. Time.
+
+## The fix
 
 ```python
 import pixpick
 
-region = pixpick.box("frame.jpg")
-zone   = pixpick.polygon("frame.jpg")
+region = pixpick.box("frame.jpg")      # drag a box on the image
+zone   = pixpick.polygon("frame.jpg")  # click polygon vertices
 
-model.predict("frame.jpg", **region.to_yolo())
-predictor.predict(**region.to_sam2())
-sv.PolygonZone(**zone.to_supervision())
+# coordinates are ready — unpack directly into any framework
+# YOLO:
+regioncounter = solutions.RegionCounter(
+     region=region.yolo_region,  # pass region points
+     model="yolo26n.pt",
+ )
+model.predict("frame.jpg", visual_prompt= region.yolo_prompt())
+
+# SAM1/SAM2:
+predictor.predict(region.sam())
 ```
+
+A window opens on your image. You interact. You get framework-ready coordinates back in Python. No round-trips.
+
+---
 
 ## Install
 
@@ -27,43 +53,90 @@ sv.PolygonZone(**zone.to_supervision())
 pip install pixpick
 ```
 
+---
+
 ## Selectors
 
-| Function | Interaction | Returns |
+| Selector | How to use | Returns |
 |---|---|---|
-| `pixpick.box()` | drag | `Box` |
-| `pixpick.polygon()` | click vertices | `Polygon` |
+| `pixpick.box()` | Left-click + drag | `Box` |
+| `pixpick.polygon()` | Click vertices → `Enter` to confirm | `Polygon` |
+
+**Box controls** — `drag` to draw · `R` to reset · `Esc` to cancel
+
+**Polygon controls** — `LMB` add point · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
+
+---
 
 ## Output formats
 
-```python
-# Box
-region.xyxy             # [x1, y1, x2, y2]
-region.xywh             # [x, y, w, h]
-region.normalized       # [0.12, 0.08, 0.64, 0.48]
-region.to_yolo()        # {"crop": [...]}
-region.to_sam2()        # {"box": np.array([...])}
+Every selection object carries all the formats you'll ever need.
 
-# Polygon
-zone.points             # [(x0,y0), (x1,y1), ...]
-zone.as_numpy           # np.array shape (N, 2)
-zone.to_supervision()   # {"polygon": np.array([...])}
-zone.bounding_box       # → Box
+```python
+# ── Box ──────────────────────────────────────────────────────
+region = pixpick.box("frame.jpg")
+
+region.xyxy              # [x1, y1, x2, y2]           absolute pixels
+region.xywh              # [x, y, w, h]                absolute pixels
+region.normalized_xywh   # [x, y, w, h]                0.0 – 1.0  ← YOLO label format
+region.center            # (cx, cy)
+region.area              # pixels²
+
+
+# ── Polygon ───────────────────────────────────────────────────
+zone = pixpick.polygon("frame.jpg")
+
+zone.points              # [(x0,y0), (x1,y1), ...]     absolute pixels
+zone.as_numpy            # np.array shape (N, 2)
+zone.normalized          # [(x0n,y0n), ...]             0.0 – 1.0
+zone.bounding_box        # → Box   tight bbox around the polygon
+zone.n_points            # int
 ```
+For more details, see [Selectors](docs/selectors.md).
+---
+
+## Framework integration
+
+| Framework | Selector | Method |
+|---|---|---|
+| Ultralytics YOLOE — visual prompt | `Box` | `region.yolo_prompt()` |
+| Ultralytics YOLO — region | `Box` | `region.yolo_region()` |
+| SAM / SAM2 — box prompt | `Box` | `region.sam()` |
+| Any other format | `Box` / `Polygon` | `region.to_raw()` |
+
+---
 
 ## Persistence
 
+Pick once, reuse forever.
+
 ```python
 region.save("zone.json")
-region = pixpick.load("zone.json")   # works for Box and Polygon
+region = pixpick.load("zone.json")   # Box and Polygon both work
 ```
+
+Production pattern — pick interactively the first time, load on every subsequent run:
+
+```python
+from pathlib import Path
+import pixpick
+
+ZONE = "config/count_zone.json"
+
+zone = pixpick.load(ZONE) if Path(ZONE).exists() else pixpick.polygon("frame.jpg")
+zone.save(ZONE)
+```
+
+---
 
 ## Docs
 
-- [Getting Started](docs/getting-started.md)
-- [Selectors](docs/selectors.md)
-- [Framework Integration](docs/frameworks.md)
-- [Backends](docs/backends.md)
-- [Persistence](docs/persistence.md)
-- [Architecture](docs/architecture.md)
-- [Roadmap](docs/roadmap.md)
+| | |
+|---|---|
+| 🚀 [Getting Started](docs/getting-started.md) | Installation, first selection, controls |
+| 🎯 [Selectors](docs/selectors.md) | All properties and methods for Box and Polygon |
+| 🔌 [Framework Integration](docs/frameworks.md) | YOLO, SAM2, Supervision, OCR and more |
+| 🖥️ [Backends](docs/backends.md) | CV2, Notebook, Gradio — and writing your own |
+| 💾 [Persistence](docs/persistence.md) | Save, load, JSON schema |
+| 🏗️ [Architecture](docs/architecture.md) | How it's built and how to extend it |
+| 🗺️ [Roadmap](docs/roadmap.md) | What's coming next |
