@@ -135,9 +135,9 @@ zone.save(ZONE)
 
 | | |
 |---|---|
-| 🚀 [Getting Started](docs/getting-started.md) | Installation, first selection, controls |
-| 🎯 [Selectors](docs/selectors.md) | All properties and methods for Box and Polygon |
-| 🔌 [Framework Integration](docs/frameworks.md) | YOLO, SAM2 and more |
-| 💾 [Persistence](docs/persistence.md) | Save, load, JSON schema |
-| 🏗️ [Architecture](docs/architecture.md) | How it's built and how to extend it |
-| 🗺️ [Roadmap](docs/roadmap.md) | What's coming next |
+| 🚀 [Getting Started](https://github.com/K-saif/pixpick/blob/main/docs/getting-started.md) | Installation, first selection, controls |
+| 🎯 [Selectors](https://github.com/K-saif/pixpick/blob/main/docs/selectors.md) | All properties and methods for Box and Polygon |
+| 🔌 [Framework Integration](https://github.com/K-saif/pixpick/blob/main/docs/frameworks.md) | YOLO, SAM2 and more |
+| 💾 [Persistence](https://github.com/K-saif/pixpick/blob/main/docs/persistence.md) | Save, load, JSON schema |
+| 🏗️ [Architecture](https://github.com/K-saif/pixpick/blob/main/docs/architecture.md) | How it's built and how to extend it |
+| 🗺️ [Roadmap](https://github.com/K-saif/pixpick/blob/main/docs/roadmap.md) | What's coming next |
