@@ -142,3 +142,10 @@ zone.save(ZONE)
 | 💾 [Persistence](https://github.com/K-saif/pixpick/blob/main/docs/persistence.md) | Save, load, JSON schema |
 | 🏗️ [Architecture](https://github.com/K-saif/pixpick/blob/main/docs/architecture.md) | How it's built and how to extend it |
 | 🗺️ [Roadmap](https://github.com/K-saif/pixpick/blob/main/docs/roadmap.md) | What's coming next |
+
+
+---
+
+## Contributing
+
+We welcome contributions! Please open a GitHub issue or submit a pull request. For major changes, please open an issue first to discuss what you would like to change.
