@@ -94,15 +94,15 @@ class TestBoxProperties:
         assert w  == 300.0
         assert h  == 250.0
 
-    def test_normalized(self, box):
-        n = box.normalized
+    def test_norm(self, box):
+        n = box.norm
         assert len(n) == 4
         assert all(0.0 <= v <= 1.0 for v in n)
         assert pytest.approx(n[0], abs=1e-4) == 100 / 1920
         assert pytest.approx(n[1], abs=1e-4) == 50  / 1080
 
-    def test_normalized_xywh(self, box):
-        n = box.normalized_xywh
+    def test_norm_xywh(self, box):
+        n = box.norm_xywh
         assert len(n) == 4
         assert all(0.0 <= v <= 1.0 for v in n)
 
@@ -122,36 +122,32 @@ class TestBoxProperties:
 # ======================================================================== #
 # Box — framework methods                                                   #
 # ======================================================================== #
-
 class TestBoxAdapters:
 
-    def test_to_yolo(self, box):
-        result = box.to_yolo()
-        assert result == {"crop": [100, 50, 400, 300]}
+    def test_yolo_region(self, box):
+        assert box.yolo_region() == [
+            (100, 50),
+            (400, 50),
+            (400, 300),
+            (100, 300),
+        ]
 
-    def test_to_yolo_label_keys(self, box):
-        result = box.to_yolo_label(class_id=2)
-        assert "line" in result
-        assert result["class_id"] == 2
-        parts = result["line"].split()
-        assert parts[0] == "2"
-        assert len(parts) == 5
-        # all values after class id should be normalised floats in [0, 1]
-        assert all(0.0 <= float(v) <= 1.0 for v in parts[1:])
+    def test_yolo_prompt(self, box):
+        np.testing.assert_array_equal(
+            box.yolo_prompt(),
+            np.array([[100, 50, 400, 300]]),
+        )
 
-    def test_to_sam2(self, box):
-        result = box.to_sam2()
-        assert "box" in result
-        assert isinstance(result["box"], np.ndarray)
-        assert result["box"].tolist() == [100, 50, 400, 300]
+    def test_sam(self, box):
+        np.testing.assert_array_equal(box.sam(), np.array([100, 50, 400, 300]))
 
-    def test_to_raw_keys(self, box):
-        raw = box.to_raw()
+    def test_raw_keys(self, box):
+        raw = box.raw()
         expected = {"xyxy", "xywh", "cxcywh", "normalized", "normalized_xywh", "numpy"}
         assert expected.issubset(raw.keys())
 
-    def test_to_raw_xyxy_matches(self, box):
-        assert box.to_raw()["xyxy"] == box.xyxy
+    def test_raw_xyxy_matches(self, box):
+        assert box.raw()["xyxy"] == box.xyxy
 
 
 # ======================================================================== #
@@ -228,7 +224,7 @@ class TestBoxVisualize:
 class TestPolygonConstruction:
 
     def test_basic(self, polygon):
-        assert polygon.n_points == 4
+        assert polygon.npoints == 4
 
     def test_too_few_points_raises(self):
         with pytest.raises(ValueError, match="at least 3"):
@@ -258,30 +254,27 @@ class TestPolygonProperties:
         assert arr.shape == (4, 2)
         assert arr.dtype == np.int32
 
-    def test_normalized_range(self, polygon):
-        for x, y in polygon.normalized:
+    def test_norm_range(self, polygon):
+        for x, y in polygon.norm:
             assert 0.0 <= x <= 1.0
             assert 0.0 <= y <= 1.0
 
-    def test_normalized_numpy_shape(self, polygon):
-        arr = polygon.normalized_numpy
+    def test_norm_numpy_shape(self, polygon):
+        arr = polygon.norm_numpy
         assert arr.shape == (4, 2)
         assert arr.dtype == np.float32
 
-    def test_bounding_box_type(self, polygon):
-        bbox = polygon.bounding_box
-        assert isinstance(bbox, Box)
+    def test_bbox_type(self, polygon):
+        bbox = polygon.bbox
+        assert isinstance(bbox, list)
 
-    def test_bounding_box_values(self, polygon):
+    def test_bbox_values(self, polygon):
         # polygon is a rectangle (100,50)→(400,300)
-        bbox = polygon.bounding_box
-        assert bbox.x1 == 100
-        assert bbox.y1 == 50
-        assert bbox.x2 == 400
-        assert bbox.y2 == 300
+        bbox = polygon.bbox
+        assert bbox == [100, 50, 400, 300]
 
     def test_n_points(self, polygon):
-        assert polygon.n_points == 4
+        assert polygon.npoints == 4
 
 
 # ======================================================================== #
@@ -291,17 +284,17 @@ class TestPolygonProperties:
 class TestPolygonAdapters:
 
     def test_to_supervision_key(self, polygon):
-        result = polygon.to_supervision()
+        result = polygon.supervision()
         assert "polygon" in result
 
     def test_to_supervision_numpy(self, polygon):
-        arr = polygon.to_supervision()["polygon"]
+        arr = polygon.supervision()["polygon"]
         assert isinstance(arr, np.ndarray)
         assert arr.shape == (4, 2)
 
-    def test_to_raw_keys(self, polygon):
-        raw = polygon.to_raw()
-        expected = {"points", "numpy", "normalized", "normalized_numpy", "bounding_box_xyxy"}
+    def test_raw_keys(self, polygon):
+        raw = polygon.raw()
+        expected = {"points", "numpy", "normalized", "normalized_numpy", "bbox_xyxy"}
         assert expected.issubset(raw.keys())
 
 
