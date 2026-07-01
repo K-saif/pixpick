@@ -30,3 +30,6 @@ Documentation = "https://github.com/K-saif/pixpick/tree/main/docs"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["pixpick*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

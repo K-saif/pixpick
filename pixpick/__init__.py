@@ -22,7 +22,7 @@ Quick start
     region.save("zone.json")
     region = pixpick.load("zone.json")
 """
-
+from __future__ import annotations
 from pixpick.selectors.box import BoxSelector
 from pixpick.selectors.polygon import PolygonSelector, SelectionCancelled
 from pixpick.core.selection import Box, Polygon
