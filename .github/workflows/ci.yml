@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install system dependencies
+        # cv2 needs libGL on headless Ubuntu
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libgl1 libglib2.0-0
+
+      - name: Install package + test deps
+        run: |
+          pip install --upgrade pip
+          pip install opencv-python-headless numpy pytest
+          pip install -e .
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
