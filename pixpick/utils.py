@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 from pathlib import Path
 from typing import Union
+from __future__ import annotations
 
 ImageSource = Union[str, Path, np.ndarray]
 
