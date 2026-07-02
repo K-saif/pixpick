@@ -25,7 +25,7 @@ Quick start
 from __future__ import annotations
 from pixpick.selectors.box import BoxSelector
 from pixpick.selectors.polygon import PolygonSelector, SelectionCancelled
-from pixpick.core.selection import Box, Polygon
+from pixpick.core.selection import Box, Polygon, Line
 from pixpick.utils import ImageSource
 
 
@@ -76,8 +76,30 @@ def polygon(source: ImageSource, title: str = "pixpick") -> Polygon:
     """
     return PolygonSelector().select(source, title=title)
 
+def line(source: ImageSource, title: str = "pixpick") -> Line:
+    """
+    Open an interactive window on `source`, drag a line, return a Line.
 
-def load(path: str) -> Box | Polygon:
+    Parameters
+    ----------
+    source : str | Path | np.ndarray
+        Image file path or BGR numpy array.
+    title : str
+        Window title shown to the user.
+
+    Returns
+    -------
+    Line
+
+    Raises
+    ------
+    SelectionCancelled
+        If the user pressed Esc.
+    """
+    from pixpick.selectors.line import LineSelector
+    return LineSelector().select(source, title=title)
+
+def load(path: str) -> Box | Polygon | Line:
     """
     Load a previously saved selection from a JSON file.
     Dispatches to Box.load or Polygon.load based on the 'type' field.
@@ -97,10 +119,13 @@ def load(path: str) -> Box | Polygon:
 __all__ = [
     "box",
     "polygon",
+    "line",
     "load",
     "Box",
     "Polygon",
+    "Line",
     "BoxSelector",
     "PolygonSelector",
+    "LineSelector",
     "SelectionCancelled",
 ]

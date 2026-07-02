@@ -36,7 +36,7 @@ class CV2Backend(BaseBackend):
         canvas = image.copy()   # scratch copy for live drawing
 
         cv2.namedWindow(title, cv2.WINDOW_AUTOSIZE)
-        cv2.setMouseCallback(title, self._mouse_callback, param={"image": image, "title": title})
+        cv2.setMouseCallback(title, self._box_callback, param={"image": image, "title": title})
         cv2.imshow(title, canvas)
 
         while True:
@@ -105,11 +105,54 @@ class CV2Backend(BaseBackend):
                 return self._points
 
 
+    def select_line(
+        self,
+        image: np.ndarray,
+        title: str = (
+            "pixpick | line | "
+            "LMB=select endpoints  Enter=confirm  Z=reset  Esc=cancel"
+        ),
+    ) -> tuple[tuple[int, int], tuple[int, int]] | None:
+
+        self._line_points = []
+        self._mouse_pos = None
+
+        cv2.namedWindow(title, cv2.WINDOW_AUTOSIZE)
+        cv2.setMouseCallback(title, self._line_callback)
+
+        while True:
+            canvas = self._draw_line(image)
+            cv2.imshow(title, canvas)
+
+            key = cv2.waitKey(20) & 0xFF
+
+            # Esc
+            if key == 27:
+                cv2.destroyWindow(title)
+                return None
+
+            # Z / Backspace / Delete
+            if key in (ord("z"), 8, 127):
+                self._line_points.clear()
+                self._mouse_pos = None
+                continue
+
+            # Enter / Space
+            if key in (13, 32):
+
+                if len(self._line_points) != 2:
+                    continue
+
+                cv2.destroyWindow(title)
+                return tuple(self._line_points)
+
+
+
     # ------------------------------------------------------------------ #
     # Mouse callback                                                       #
     # ------------------------------------------------------------------ #
 
-    def _mouse_callback(self, event: int, x: int, y: int, flags: int, param: dict) -> None:
+    def _box_callback(self, event: int, x: int, y: int, flags: int, param: dict) -> None:
         if event == cv2.EVENT_LBUTTONDOWN:
             self._drawing = True
             self._start   = (x, y)
@@ -141,6 +184,28 @@ class CV2Backend(BaseBackend):
         elif event == cv2.EVENT_RBUTTONDOWN:
             if self._points:
                 self._points.pop()
+
+
+    def _line_callback(
+        self,
+        event: int,
+        x: int,
+        y: int,
+        flags: int,
+        param,
+    ) -> None:
+
+        self._mouse_pos = (x, y)
+
+        if event == cv2.EVENT_LBUTTONDOWN:
+
+            if len(self._line_points) < 2:
+                self._line_points.append((x, y))
+
+        elif event == cv2.EVENT_RBUTTONDOWN:
+
+            if self._line_points:
+                self._line_points.pop()
 
 
     # ------------------------------------------------------------------ #
@@ -266,5 +331,46 @@ class CV2Backend(BaseBackend):
             2,
             cv2.LINE_AA,
         )
+
+        return canvas
+    
+
+    def _draw_line(self, image: np.ndarray) -> np.ndarray:
+        """Return a copy of image with the current line drawn."""
+
+        canvas = image.copy()
+
+        # Draw selected endpoints
+        for point in self._line_points:
+            cv2.circle(canvas, point, 4, (0, 255, 0), -1)
+
+        # Live preview
+        if len(self._line_points) == 1 and self._mouse_pos is not None:
+            cv2.line(
+                canvas,
+                self._line_points[0],
+                self._mouse_pos,
+                (0, 255, 0),
+                2,
+            )
+
+        # Final line
+        elif len(self._line_points) == 2:
+            p1, p2 = self._line_points
+
+            cv2.line(canvas, p1, p2, (0, 255, 0), 2)
+
+            label = f"{p1} → {p2}"
+
+            cv2.putText(
+                canvas,
+                label,
+                (min(p1[0], p2[0]), max(min(p1[1], p2[1]) - 8, 12)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                1,
+                cv2.LINE_AA,
+            )
 
         return canvas

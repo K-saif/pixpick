@@ -360,3 +360,48 @@ class Polygon:
             f"Polygon(npoints={self.npoints}, "
             f"size={self.image_width}x{self.image_height})"
         )
+    
+
+@dataclass
+class Line:
+    """
+    Immutable result of a line selection.
+
+    Attributes
+    ----------
+    points : list[tuple[int, int]]
+        Ordered list of (x, y) vertices in absolute pixels.
+    image_width, image_height : int
+        Dimensions of the source image — needed for normalisation.
+    """
+
+    points: list[tuple[int, int]]
+    image_width: int
+    image_height: int
+
+    # ------------------------------------------------------------------ #
+    # Validation                                                           #
+    # ------------------------------------------------------------------ #
+
+    def __post_init__(self):
+        if len(self.points) < 2:
+            raise ValueError(
+                f"Line needs at least 2 points, got {len(self.points)}"
+            )
+        for i, pt in enumerate(self.points):
+            x, y = pt
+            if not (0 <= x <= self.image_width and 0 <= y <= self.image_height):
+                raise ValueError(
+                    f"Point {i} ({x},{y}) is outside image "
+                    f"({self.image_width}x{self.image_height})"
+                )
+
+
+    # ------------------------------------------------------------------ #
+    # Core format properties                                               #
+    # ------------------------------------------------------------------ #
+
+    @property
+    def as_numpy(self) -> np.ndarray:
+        """Shape (2, 2) int32 array — [[x1,y1], [x2,y2]]."""
+        return np.array(self.points, dtype=np.int32)
