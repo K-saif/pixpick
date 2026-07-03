@@ -45,3 +45,18 @@ class BaseBackend(ABC):
         List of (x, y) tuples (≥ 3 points), or None if cancelled.
         """
         ...
+
+    @abstractmethod
+    def select_line(
+        self,
+        image: np.ndarray,
+        title: str = "pixpick",
+    ) -> list[tuple[int, int]] | None:
+        """
+        Let the user click line endpoints on the image.
+
+        Returns
+        -------
+        List of (x, y) tuples (2 points), or None if cancelled.
+        """
+        ...
