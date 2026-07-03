@@ -19,7 +19,6 @@
 ## v0.3 — Video + multi-selection
 
 - `pixpick.from_video(path, frame)` — pick from any video frame without leaving Python
-- `pixpick.multi_box()` — pick N boxes in one pass
 - `pixpick.multi_polygon()` — pick N zones in one pass
 - Video scrubbar UI in cv2 backend
 

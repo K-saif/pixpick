@@ -26,8 +26,12 @@ A window opens on `image.jpg`. Drag a rectangle, release the mouse — done. The
 | Action | Control |
 |---|---|
 | Draw box | Left-click + drag |
-| Reset | `R` or `Z` |
+| Undo last box | Right-click |
+| Clear all boxes | `Z` or Backspace/Delete |
+| Confirm selection | `Enter` or `Space` |
 | Cancel | `Esc` |
+
+If you draw more than one box, `pixpick.box()` returns a `Multibox` that holds all selected coordinates.
 
 **Polygon selector**
 

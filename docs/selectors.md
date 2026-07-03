@@ -8,6 +8,8 @@ A selector opens a UI, captures user input, and returns a typed Selection object
 region = pixpick.box("image.jpg")
 ```
 
+`pixpick.box()` returns a `Box` when you draw one rectangle, and a `Multibox` when you draw several. For multi-box results, use `region.boxes` for the wrapped `Box` objects and `region.xyxy` for all coordinates.
+
 ### Properties
 
 ```python
@@ -45,6 +47,16 @@ cv2.waitKey(0)
 ```python
 region.save("selection.json")
 region = pixpick.load("selection.json")   # or Box.load("selection.json")
+```
+
+### Multi-box results
+
+```python
+region = pixpick.box("image.jpg")
+
+region.boxes        # [Box(...), Box(...), ...]
+region.xyxy         # [[x1, y1, x2, y2], ...]
+region.as_numpy     # np.array shape (N, 4)
 ```
 
 ---
@@ -99,5 +111,4 @@ zone = pixpick.load("zone.json")   # or Polygon.load("zone.json")
 | `pixpick.points()` | click (fg/bg toggle) | `Points` | v0.2 |
 | `pixpick.line()` | 2-click | `Line` | v0.2 |
 | `pixpick.perspective()` | 4-corner click | `Perspective` | v0.2 |
-| `pixpick.multi_box()` | multiple drags | `list[Box]` | v0.3 |
 | `pixpick.multi_polygon()` | multiple polygons | `list[Polygon]` | v0.3 |

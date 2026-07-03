@@ -5,7 +5,7 @@
 ```
 pixpick/
 ├── core/
-│   └── selection.py      # Box, Polygon — all properties and to_*() methods
+│   └── selection.py      # Box, Multibox, Polygon — all properties and to_*() methods
 ├── selectors/
 │   ├── box.py            # BoxSelector
 │   └── polygon.py        # PolygonSelector
@@ -24,8 +24,8 @@ pixpick.box("frame.jpg")
     ▼
 BoxSelector.select(source)
     ├── utils.load_image(source)     → np.ndarray
-    ├── CV2Backend.select_box(image) → (x1, y1, x2, y2)
-    └── Box(x1, y1, x2, y2, w, h)   → returned to caller
+    ├── CV2Backend.select_box(image) → [(x1, y1, x2, y2), ...] | None
+    └── Box(...) or Multibox(...)    → returned to caller
                 │
                 ├── .xyxy / .xywh / .norm / ...   (properties)
                 ├── .yolo_region()                           (inline, no extra file)
@@ -69,6 +69,8 @@ Used automatically when no backend is specified. Opens a native OpenCV window.
 ```python
 region = pixpick.box("frame.jpg")               # CV2Backend used by default
 ```
+
+If you draw multiple boxes, the selector returns a `Multibox` instead of a single `Box`.
 
 ## Swapping backends
 
