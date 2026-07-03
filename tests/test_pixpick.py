@@ -18,7 +18,7 @@ import tempfile
 import numpy as np
 import pytest
 
-from pixpick.core.selection import Box, Polygon
+from pixpick.core.selection import Box, Multibox, Polygon
 from pixpick import load
 
 
@@ -148,6 +148,69 @@ class TestBoxAdapters:
 
     def test_raw_xyxy_matches(self, box):
         assert box.raw()["xyxy"] == box.xyxy
+
+
+# ======================================================================== #
+# Multibox — construction and properties                                    #
+# ======================================================================== #
+
+class TestMultibox:
+
+    def test_basic(self):
+        multibox = Multibox(
+            boxes=[
+                [100, 50, 400, 300],
+                [500, 200, 800, 600],
+            ],
+            image_width=1920,
+            image_height=1080,
+        )
+
+        assert multibox.xyxy == [
+            [100, 50, 400, 300],
+            [500, 200, 800, 600],
+        ]
+
+    def test_properties(self):
+        multibox = Multibox(
+            boxes=[
+                [100, 50, 400, 300],
+                [500, 200, 800, 600],
+            ],
+            image_width=1920,
+            image_height=1080,
+        )
+
+        assert multibox.xywh == [
+            [100, 50, 300, 250],
+            [500, 200, 300, 400],
+        ]
+        assert multibox.center == [[250, 175], [650, 400]]
+        assert multibox.area == [300 * 250, 300 * 400]
+        np.testing.assert_array_equal(
+            multibox.as_numpy,
+            np.array(
+                [
+                    [100, 50, 400, 300],
+                    [500, 200, 800, 600],
+                ],
+                dtype=np.int32,
+            ),
+        )
+
+    def test_raw_keys(self):
+        multibox = Multibox(
+            boxes=[
+                [100, 50, 400, 300],
+                [500, 200, 800, 600],
+            ],
+            image_width=1920,
+            image_height=1080,
+        )
+
+        raw = multibox.raw()
+        expected = {"xyxy", "xywh", "cxcywh", "normalized", "normalized_xywh", "numpy"}
+        assert expected.issubset(raw.keys())
 
 
 # ======================================================================== #
