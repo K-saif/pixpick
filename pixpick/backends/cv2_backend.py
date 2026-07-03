@@ -29,42 +29,44 @@ class CV2Backend(BaseBackend):
     def select_box(
         self,
         image: np.ndarray,
-        title: str = "pixpick  |  drag to select  |  Enter=confirm  R=reset  Esc=cancel",
-    ) -> tuple[int, int, int, int] | None:
+        title: str = (
+            "pixpick | boxes | "
+            "Drag=LMB  RMB=undo  Enter=confirm  Z=clear  Esc=cancel"
+        ),
+    ):
 
         self._reset_state()
-        canvas = image.copy()   # scratch copy for live drawing
+        self._boxes = []
 
         cv2.namedWindow(title, cv2.WINDOW_AUTOSIZE)
-        cv2.setMouseCallback(title, self._box_callback, param={"image": image, "title": title})
-        cv2.imshow(title, canvas)
+        cv2.setMouseCallback(title, self._box_callback)
 
         while True:
-            # Redraw every frame so the rubber-band rect updates.
-            canvas = self._draw_rect(image)
+
+            canvas = self._draw_box(image)
             cv2.imshow(title, canvas)
 
             key = cv2.waitKey(20) & 0xFF
 
-            if self._cancelled or key == 27:        # Esc
+            # Esc
+            if key == 27:
                 cv2.destroyWindow(title)
                 return None
 
-            # Backspace or Delete -> clear current selection
+            # Clear all
             if key in (ord("z"), 8, 127):
                 self._reset_state()
+                self._boxes.clear()
                 continue
 
-            if key in (13, 32) or self._confirmed:  # Enter / Space
-                if self._start == self._end:
-                    # User hit confirm without completing a drag — ignore.
+            # Enter / Space
+            if key in (13, 32):
+
+                if not self._boxes:
                     continue
+
                 cv2.destroyWindow(title)
-                x1 = min(self._start[0], self._end[0])
-                y1 = min(self._start[1], self._end[1])
-                x2 = max(self._start[0], self._end[0])
-                y2 = max(self._start[1], self._end[1])
-                return x1, y1, x2, y2
+                return self._boxes
 
 
     def select_polygon(
@@ -152,20 +154,45 @@ class CV2Backend(BaseBackend):
     # Mouse callback                                                       #
     # ------------------------------------------------------------------ #
 
-    def _box_callback(self, event: int, x: int, y: int, flags: int, param: dict) -> None:
+    def _box_callback(
+        self,
+        event: int,
+        x: int,
+        y: int,
+        flags: int,
+        param,
+    ) -> None:
+
         if event == cv2.EVENT_LBUTTONDOWN:
+
             self._drawing = True
-            self._start   = (x, y)
-            self._end     = (x, y)
+            self._start = (x, y)
+            self._end = (x, y)
 
         elif event == cv2.EVENT_MOUSEMOVE and self._drawing:
+
             self._end = (x, y)
 
         elif event == cv2.EVENT_LBUTTONUP:
-            self._drawing   = False
-            self._end       = (x, y)
-            # self._confirmed = True   # auto-confirm on mouse release
 
+            self._drawing = False
+            self._end = (x, y)
+
+            x1 = min(self._start[0], self._end[0])
+            y1 = min(self._start[1], self._end[1])
+            x2 = max(self._start[0], self._end[0])
+            y2 = max(self._start[1], self._end[1])
+
+            if x1 != x2 and y1 != y2:
+                self._boxes.append([x1, y1, x2, y2])
+
+            self._start = (0, 0)
+            self._end = (0, 0)
+
+        elif event == cv2.EVENT_RBUTTONDOWN:
+
+            if self._boxes:
+                self._boxes.pop()
 
     def _polygon_callback(
         self,
@@ -220,24 +247,49 @@ class CV2Backend(BaseBackend):
         self._cancelled = False
         self._points = []
 
-    def _draw_rect(self, image: np.ndarray) -> np.ndarray:
-        """Return a copy of image with the current rubber-band rect drawn."""
+    def _draw_box(self, image: np.ndarray) -> np.ndarray:
+        """Return image with completed boxes and current rubber-band box."""
+
         canvas = image.copy()
-        if self._start != self._end:
-            # Semi-transparent fill
+
+        # Draw completed boxes
+        for x1, y1, x2, y2 in self._boxes:
+
             overlay = canvas.copy()
+
+            cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 0), -1)
+            cv2.addWeighted(overlay, 0.15, canvas, 0.85, 0, canvas)
+
+            cv2.rectangle(canvas, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+        # Draw current rubber-band box
+        if self._drawing:
+
+            overlay = canvas.copy()
+
             cv2.rectangle(overlay, self._start, self._end, (0, 255, 0), -1)
             cv2.addWeighted(overlay, 0.15, canvas, 0.85, 0, canvas)
-            # Solid border
+
             cv2.rectangle(canvas, self._start, self._end, (0, 255, 0), 2)
-            # Corner coords label
+
             x1 = min(self._start[0], self._end[0])
             y1 = min(self._start[1], self._end[1])
             x2 = max(self._start[0], self._end[0])
             y2 = max(self._start[1], self._end[1])
-            label = f"({x1},{y1}) ({x2},{y2})  w={x2-x1} h={y2-y1}"
-            cv2.putText(canvas, label, (x1, max(y1 - 8, 12)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+
+            label = f"({x1},{y1}) ({x2},{y2})"
+
+            cv2.putText(
+                canvas,
+                label,
+                (x1, max(y1 - 8, 12)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                1,
+                cv2.LINE_AA,
+            )
+
         return canvas
     
 

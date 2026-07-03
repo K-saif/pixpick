@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 from pixpick.backends.base import BaseBackend
 from pixpick.backends.cv2_backend import CV2Backend
-from pixpick.core.selection import Box
+from pixpick.core.selection import Box, Multibox
 from pixpick.utils import load_image, image_size, ImageSource
 
 
@@ -51,13 +51,17 @@ class BoxSelector:
         image = load_image(source)
         w, h  = image_size(image)
 
-        raw = self.backend.select_box(image, title=title)
+        boxes = self.backend.select_box(image, title=title)
 
-        if raw is None:
+        if boxes is None:
             raise SelectionCancelled("Box selection was cancelled by the user.")
 
-        x1, y1, x2, y2 = raw
-        return Box(x1=x1, y1=y1, x2=x2, y2=y2, image_width=w, image_height=h)
+        if len(boxes) == 1:
+            x1, y1, x2, y2 = boxes[0]
+            return Box(x1=x1, y1=y1, x2=x2, y2=y2, image_width=w, image_height=h)
+        else:
+            return Multibox(boxes=boxes, image_width=w, image_height=h)
+        
 
 
 class SelectionCancelled(Exception):

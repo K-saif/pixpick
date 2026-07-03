@@ -197,6 +197,144 @@ class Box:
             f"area={self.area}px²)"
         )
 
+@dataclass
+class Multibox:
+    """
+    Immutable result of a multi-box selection.
+
+    Attributes
+    ----------
+    boxes : list[Box]
+        List of Box objects.
+    image_width, image_height : int
+        Dimensions of the source image — needed for normalisation.
+    """
+
+    boxes: list[Box]
+    image_width: int
+    image_height: int
+
+    # ------------------------------------------------------------------ #
+    # Validation                                                           #
+    # ------------------------------------------------------------------ #
+    def __post_init__(self):
+        if not self.boxes:
+            raise ValueError("Multibox must contain at least two Box.")
+        for i, box in enumerate(self.boxes):
+            x1, y1, x2, y2 = box
+            # Normalise so x1 < x2 and y1 < y2 regardless of drag direction.
+            x1, x2 = sorted([x1, x2])
+            y1, y2 = sorted([y1, y2])
+
+            if x1 == x2 or y1 == y2:
+                raise ValueError(f"Box {i} has zero area — did the drag complete?")
+
+            if not (0 <= x1 < x2 <= self.image_width):
+                raise ValueError(
+                    f"for box {i} coords out of bounds: {x1}, {x2} (image width={self.image_width})"
+                )
+            if not (0 <= y1 < y2 <= self.image_height):
+                raise ValueError(
+                    f"for box {i} coords out of bounds: {y1}, {y2} (image height={self.image_height})"
+                )
+
+
+    # ------------------------------------------------------------------ #
+    # Core format properties                                               #
+    # ------------------------------------------------------------------ #
+
+    @property
+    def xyxy(self) -> list[int]:
+        """[x1, y1, x2, y2] — absolute pixels for each box in boxes."""
+        return self.boxes
+
+    @property
+    def xywh(self) -> list[int]:
+        """[x, y, width, height] — top-left origin, absolute pixels for each box in boxes."""
+        return [[box[0], box[1], box[2] - box[0], box[3] - box[1]] for box in self.boxes]
+
+    @property
+    def cxcywh(self) -> list[float]:
+        """[cx, cy, width, height] — centre + size, absolute pixels for each box in boxes."""
+        return [[box[0] + (box[2] - box[0]) / 2, box[1] + (box[3] - box[1]) / 2, float(box[2] - box[0]), float(box[3] - box[1])] for box in self.boxes]
+
+    @property
+    def norm(self) -> list[float]:
+        """[x1, y1, x2, y2] — values in [0, 1] for each box in boxes."""
+        return [[
+            box[0] / self.image_width,
+            box[1] / self.image_height,
+            box[2] / self.image_width,
+            box[3] / self.image_height,
+        ] for box in self.boxes]
+
+    @property
+    def norm_xywh(self) -> list[list[float]]:
+        """[[x, y, w, h], ...] normalised — YOLO label format for each box in boxes."""
+        return [
+            [
+                box[0] / self.image_width,
+                box[1] / self.image_height,
+                (box[2] - box[0]) / self.image_width,
+                (box[3] - box[1]) / self.image_height,
+            ]
+            for box in self.boxes
+        ]
+
+    @property
+    def center(self) -> tuple[int, int]:
+        """(cx, cy) in absolute pixels.for each box in boxes."""
+        return [[(box[0] + box[2]) // 2, (box[1] + box[3]) // 2] for box in self.boxes]
+
+
+    @property
+    def area(self) -> int:
+        """Area in pixels² for each box in boxes."""
+        return [(box[2] - box[0]) * (box[3] - box[1]) for box in self.boxes]
+
+    @property
+    def as_numpy(self) -> np.ndarray:
+        """Shape (N, 4) int32 array — [[x1, y1, x2, y2], ...]."""
+        return np.array(self.boxes, dtype=np.int32)
+
+
+    # ------------------------------------------------------------------ #
+    # Adapter shortcuts                                                    #
+    # ------------------------------------------------------------------ #
+
+    def yolo_region(self) -> list[float]:
+        """[(point1), (point2), (point3), (point4)] """
+        return [[
+            (box[0], box[1]),
+            (box[2], box[1]),
+            (box[2], box[3]),
+            (box[0], box[3])
+        ] for box in self.boxes ]
+
+    def yolo_prompt(self) -> np.ndarray:
+        """[(point1), (point2), (point3), (point4)] """
+        return np.array([
+            [box[0], box[1], box[2], box[3]]
+            for box in self.boxes
+        ])
+
+    def sam(self) -> np.ndarray:
+        """[(point1), (point2), (point3), (point4)] """
+        return np.array(self.boxes, dtype=np.int32)
+
+
+    def raw(self) -> dict:
+        """All formats at once — handy for debugging."""
+        return {
+            "xyxy":            self.xyxy,
+            "xywh":            self.xywh,
+            "cxcywh":          self.cxcywh,
+            "normalized":      self.norm,
+            "normalized_xywh": self.norm_xywh,
+            "numpy":           self.as_numpy.tolist(),
+        }
+
+
 
 # ======================================================================== #
 # Polygon                                                                    #
