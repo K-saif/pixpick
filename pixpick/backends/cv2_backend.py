@@ -15,13 +15,12 @@ class CV2Backend(BaseBackend):
     Left-click + drag  : draw the box
     Enter / Space      : confirm selection
     R                  : reset and redraw
-    Esc                : cancel — returns None
+    Esc                : cancel - returns None
 
     The live rubber-band rect is drawn on a scratch copy of the image
     so the original is never mutated.
     """
 
-    # Internal mouse state — kept on the instance so the callback has access.
     _drawing: bool
     _start: tuple[int, int]
     _end: tuple[int, int]
@@ -29,6 +28,10 @@ class CV2Backend(BaseBackend):
     _cancelled: bool
     _image_width: int
     _image_height: int
+    _display_width: int
+    _display_height: int
+    _scale_x: float
+    _scale_y: float
 
     def select_box(
         self,
@@ -41,32 +44,27 @@ class CV2Backend(BaseBackend):
 
         self._reset_state()
         self._boxes = []
-        self._set_image_bounds(image)
+        display_image = self._prepare_display_image(image)
 
         cv2.namedWindow(title, cv2.WINDOW_AUTOSIZE)
         cv2.setMouseCallback(title, self._box_callback)
 
         while True:
-
-            canvas = self._draw_box(image)
+            canvas = self._draw_box(display_image)
             cv2.imshow(title, canvas)
 
             key = cv2.waitKey(20) & 0xFF
 
-            # Esc
             if key == 27:
                 cv2.destroyWindow(title)
                 return None
 
-            # Clear all
             if key in (ord("z"), 8, 127):
                 self._reset_state()
                 self._boxes.clear()
                 continue
 
-            # Enter / Space
             if key in (13, 32):
-
                 if not self._boxes:
                     continue
 
@@ -80,36 +78,31 @@ class CV2Backend(BaseBackend):
     ) -> list[tuple[int, int]] | None:
 
         self._points = []
-        self._set_image_bounds(image)
+        display_image = self._prepare_display_image(image)
 
         cv2.namedWindow(title, cv2.WINDOW_AUTOSIZE)
         cv2.setMouseCallback(title, self._polygon_callback)
 
         while True:
-            canvas = self._draw_polygon(image)
+            canvas = self._draw_polygon(display_image)
             cv2.imshow(title, canvas)
 
             key = cv2.waitKey(20) & 0xFF
 
-            # Esc
             if key == 27:
                 cv2.destroyWindow(title)
                 return None
 
-            # Z / Backspace / Delete
             if key in (ord("z"), 8, 127):
                 self._points.clear()
                 continue
 
-            # Enter / Space
             if key in (13, 32):
-
                 if len(self._points) < 3:
                     continue
 
                 cv2.destroyWindow(title)
-
-                return self._points
+                return [self._display_to_image_point(point) for point in self._points]
 
     def select_line(
         self,
@@ -122,39 +115,37 @@ class CV2Backend(BaseBackend):
 
         self._line_points = []
         self._mouse_pos = None
-        self._set_image_bounds(image)
+        display_image = self._prepare_display_image(image)
 
         cv2.namedWindow(title, cv2.WINDOW_AUTOSIZE)
         cv2.setMouseCallback(title, self._line_callback)
 
         while True:
-            canvas = self._draw_line(image)
+            canvas = self._draw_line(display_image)
             cv2.imshow(title, canvas)
 
             key = cv2.waitKey(20) & 0xFF
 
-            # Esc
             if key == 27:
                 cv2.destroyWindow(title)
                 return None
 
-            # Z / Backspace / Delete
             if key in (ord("z"), 8, 127):
                 self._line_points.clear()
                 self._mouse_pos = None
                 continue
 
-            # Enter / Space
             if key in (13, 32):
-
                 if len(self._line_points) != 2:
                     continue
 
                 cv2.destroyWindow(title)
-                return tuple(self._line_points)
+                return tuple(
+                    self._display_to_image_point(point) for point in self._line_points
+                )
 
     # ------------------------------------------------------------------ #
-    # Mouse callback                                                       #
+    # Mouse callback                                                      #
     # ------------------------------------------------------------------ #
 
     def _box_callback(
@@ -167,19 +158,16 @@ class CV2Backend(BaseBackend):
     ) -> None:
 
         if event == cv2.EVENT_LBUTTONDOWN:
-
             self._drawing = True
-            self._start = self._clamp_point_to_image((x, y))
+            self._start = self._display_to_image_point((x, y))
             self._end = self._start
 
         elif event == cv2.EVENT_MOUSEMOVE and self._drawing:
-
-            self._end = self._clamp_point_to_image((x, y))
+            self._end = self._display_to_image_point((x, y))
 
         elif event == cv2.EVENT_LBUTTONUP:
-
             self._drawing = False
-            self._end = self._clamp_point_to_image((x, y))
+            self._end = self._display_to_image_point((x, y))
 
             x1 = min(self._start[0], self._end[0])
             y1 = min(self._start[1], self._end[1])
@@ -193,7 +181,6 @@ class CV2Backend(BaseBackend):
             self._end = (0, 0)
 
         elif event == cv2.EVENT_RBUTTONDOWN:
-
             if self._boxes:
                 self._boxes.pop()
 
@@ -207,7 +194,7 @@ class CV2Backend(BaseBackend):
     ) -> None:
 
         if event == cv2.EVENT_LBUTTONDOWN:
-            self._points.append(self._clamp_point_to_image((x, y)))
+            self._points.append((x, y))
 
         elif event == cv2.EVENT_RBUTTONDOWN:
             if self._points:
@@ -222,20 +209,18 @@ class CV2Backend(BaseBackend):
         param,
     ) -> None:
 
-        self._mouse_pos = self._clamp_point_to_image((x, y))
+        self._mouse_pos = (x, y)
 
         if event == cv2.EVENT_LBUTTONDOWN:
-
             if len(self._line_points) < 2:
-                self._line_points.append(self._clamp_point_to_image((x, y)))
+                self._line_points.append((x, y))
 
         elif event == cv2.EVENT_RBUTTONDOWN:
-
             if self._line_points:
                 self._line_points.pop()
 
     # ------------------------------------------------------------------ #
-    # Helpers                                                              #
+    # Helpers                                                             #
     # ------------------------------------------------------------------ #
 
     def _reset_state(self) -> None:
@@ -248,6 +233,58 @@ class CV2Backend(BaseBackend):
 
     def _set_image_bounds(self, image: np.ndarray) -> None:
         self._image_height, self._image_width = image.shape[:2]
+
+    def _prepare_display_image(self, image: np.ndarray) -> np.ndarray:
+        self._set_image_bounds(image)
+
+        max_width = 1280
+        max_height = 720
+
+        if self._image_width <= max_width and self._image_height <= max_height:
+            self._display_width = self._image_width
+            self._display_height = self._image_height
+            self._scale_x = 1.0
+            self._scale_y = 1.0
+            return image
+
+        scale = min(max_width / self._image_width, max_height / self._image_height)
+        self._display_width = max(1, int(round(self._image_width * scale)))
+        self._display_height = max(1, int(round(self._image_height * scale)))
+        self._scale_x = self._display_width / self._image_width
+        self._scale_y = self._display_height / self._image_height
+
+        return cv2.resize(
+            image,
+            (self._display_width, self._display_height),
+            interpolation=cv2.INTER_AREA,
+        )
+
+    def _display_to_image_point(self, point: tuple[int, int]) -> tuple[int, int]:
+        x, y = self._clamp_point_to_display(point)
+
+        image_x = int(round(x / self._scale_x))
+        image_y = int(round(y / self._scale_y))
+
+        return self._clamp_point_to_image((image_x, image_y))
+
+    def _image_to_display_point(self, point: tuple[int, int]) -> tuple[int, int]:
+        x, y = self._clamp_point_to_image(point)
+
+        display_x = int(round(x * self._scale_x))
+        display_y = int(round(y * self._scale_y))
+
+        return self._clamp_point_to_display((display_x, display_y))
+
+    def _clamp_point_to_display(self, point: tuple[int, int]) -> tuple[int, int]:
+        x, y = point
+
+        if self._display_width <= 0 or self._display_height <= 0:
+            return point
+
+        x = max(0, min(x, self._display_width - 1))
+        y = max(0, min(y, self._display_height - 1))
+
+        return (x, y)
 
     def _clamp_point_to_image(self, point: tuple[int, int]) -> tuple[int, int]:
         x, y = point
@@ -265,8 +302,9 @@ class CV2Backend(BaseBackend):
 
         canvas = image.copy()
 
-        # Draw completed boxes
         for x1, y1, x2, y2 in self._boxes:
+            x1, y1 = self._image_to_display_point((x1, y1))
+            x2, y2 = self._image_to_display_point((x2, y2))
 
             overlay = canvas.copy()
 
@@ -275,20 +313,21 @@ class CV2Backend(BaseBackend):
 
             cv2.rectangle(canvas, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-        # Draw current rubber-band box
         if self._drawing:
+            start = self._image_to_display_point(self._start)
+            end = self._image_to_display_point(self._end)
 
             overlay = canvas.copy()
 
-            cv2.rectangle(overlay, self._start, self._end, (0, 255, 0), -1)
+            cv2.rectangle(overlay, start, end, (0, 255, 0), -1)
             cv2.addWeighted(overlay, 0.15, canvas, 0.85, 0, canvas)
 
-            cv2.rectangle(canvas, self._start, self._end, (0, 255, 0), 2)
+            cv2.rectangle(canvas, start, end, (0, 255, 0), 2)
 
-            x1 = min(self._start[0], self._end[0])
-            y1 = min(self._start[1], self._end[1])
-            x2 = max(self._start[0], self._end[0])
-            y2 = max(self._start[1], self._end[1])
+            x1 = min(start[0], end[0])
+            y1 = min(start[1], end[1])
+            x2 = max(start[0], end[0])
+            y2 = max(start[1], end[1])
 
             label = f"({x1},{y1}) ({x2},{y2})"
 
@@ -306,20 +345,18 @@ class CV2Backend(BaseBackend):
         return canvas
 
     def _draw_polygon(self, image: np.ndarray) -> np.ndarray:
-        """
-        Draw current polygon preview.
-        """
+        """Draw current polygon preview."""
 
         canvas = image.copy()
 
         if not self._points:
             return canvas
 
-        if len(self._points) >= 3:
+        points = self._points
 
+        if len(points) >= 3:
             overlay = canvas.copy()
-
-            pts = np.array(self._points, dtype=np.int32)
+            pts = np.array(points, dtype=np.int32)
 
             cv2.fillPoly(
                 overlay,
@@ -336,9 +373,8 @@ class CV2Backend(BaseBackend):
                 canvas,
             )
 
-        if len(self._points) > 1:
-
-            pts = np.array(self._points, dtype=np.int32)
+        if len(points) > 1:
+            pts = np.array(points, dtype=np.int32)
 
             cv2.polylines(
                 canvas,
@@ -348,19 +384,17 @@ class CV2Backend(BaseBackend):
                 thickness=2,
             )
 
-        if len(self._points) >= 3:
-
+        if len(points) >= 3:
             cv2.line(
                 canvas,
-                self._points[-1],
-                self._points[0],
+                points[-1],
+                points[0],
                 (0, 255, 0),
                 1,
                 cv2.LINE_AA,
             )
 
-        for idx, pt in enumerate(self._points):
-
+        for idx, pt in enumerate(points):
             cv2.circle(
                 canvas,
                 pt,
@@ -398,24 +432,27 @@ class CV2Backend(BaseBackend):
 
         canvas = image.copy()
 
-        for point in self._line_points:
+        line_points = self._line_points
+        mouse_pos = self._mouse_pos
+
+        for point in line_points:
             cv2.circle(canvas, point, 4, (0, 255, 0), -1)
 
-        if len(self._line_points) == 1 and self._mouse_pos is not None:
+        if len(line_points) == 1 and mouse_pos is not None:
             cv2.line(
                 canvas,
-                self._line_points[0],
-                self._mouse_pos,
+                line_points[0],
+                mouse_pos,
                 (0, 255, 0),
                 2,
             )
 
-        elif len(self._line_points) == 2:
-            p1, p2 = self._line_points
+        elif len(line_points) == 2:
+            p1, p2 = line_points
 
             cv2.line(canvas, p1, p2, (0, 255, 0), 2)
 
-            label = f"{p1} → {p2}"
+            label = f"{p1} to {p2}"
 
             cv2.putText(
                 canvas,
