@@ -209,11 +209,12 @@ class CV2Backend(BaseBackend):
         param,
     ) -> None:
 
-        self._mouse_pos = (x, y)
+        pos = self._clamp_point_to_display((x, y))
+        self._mouse_pos = pos
 
         if event == cv2.EVENT_LBUTTONDOWN:
             if len(self._line_points) < 2:
-                self._line_points.append((x, y))
+                self._line_points.append(pos)
 
         elif event == cv2.EVENT_RBUTTONDOWN:
             if self._line_points:
