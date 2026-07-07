@@ -26,7 +26,8 @@ class LineSelector:
 
 
     def select(self, source: ImageSource, 
-               title: str = "pixpick | drag to select | Enter=confirm | Backspace=clear | Esc=cancel") -> Line:
+               title: str = "pixpick | drag to select | Enter=confirm | Backspace=clear | Esc=cancel",
+               frame: int = 0) -> Line:
         """
         Open an interactive window on `source` and return a Line.
 
@@ -36,6 +37,8 @@ class LineSelector:
             File path or BGR numpy array.
         title : str
             Window title.
+        frame : int
+            0-based frame number to load when source is a video.
 
         Returns
         -------
@@ -48,7 +51,7 @@ class LineSelector:
             If the user pressed Esc or closed the window.
         """
         print(f"Opening interactive selection window for: {source}")
-        image = load_image(source)
+        image = load_image(source, frame=frame)
         w, h  = image_size(image)
 
         raw = self.backend.select_line(image, title=title)

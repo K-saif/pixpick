@@ -26,7 +26,8 @@ class BoxSelector:
 
 
     def select(self, source: ImageSource, 
-               title: str = "pixpick | drag to select | Enter=confirm | Backspace=clear | Esc=cancel") -> Box:
+               title: str = "pixpick | drag to select | Enter=confirm | Backspace=clear | Esc=cancel",
+               frame: int = 0) -> Box:
         """
         Open an interactive window on `source` and return a Box.
 
@@ -36,6 +37,8 @@ class BoxSelector:
             File path or BGR numpy array.
         title : str
             Window title.
+        frame : int
+            0-based frame number to load when source is a video.
 
         Returns
         -------
@@ -48,7 +51,7 @@ class BoxSelector:
             If the user pressed Esc or closed the window.
         """
         print(f"Opening interactive selection window for: {source}")
-        image = load_image(source)
+        image = load_image(source, frame=frame)
         w, h  = image_size(image)
 
         boxes = self.backend.select_box(image, title=title)

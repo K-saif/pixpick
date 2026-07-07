@@ -29,7 +29,7 @@ from pixpick.core.selection import Box, Multibox, Polygon, Line
 from pixpick.utils import ImageSource
 
 
-def box(source: ImageSource, title: str = "pixpick") -> Box:
+def box(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Box:
     """
     Open an interactive window on `source`, drag a rectangle, return a Box.
 
@@ -39,6 +39,8 @@ def box(source: ImageSource, title: str = "pixpick") -> Box:
         Image file path or BGR numpy array.
     title : str
         Window title shown to the user.
+    frame : int
+        0-based frame number to load when source is a video.
 
     Returns
     -------
@@ -49,10 +51,10 @@ def box(source: ImageSource, title: str = "pixpick") -> Box:
     SelectionCancelled
         If the user pressed Esc.
     """
-    return BoxSelector().select(source, title=title)
+    return BoxSelector().select(source, title=title, frame=frame)
 
 
-def polygon(source: ImageSource, title: str = "pixpick") -> Polygon:
+def polygon(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Polygon:
     """
     Open an interactive window on `source`, click vertices, return a Polygon.
 
@@ -64,6 +66,8 @@ def polygon(source: ImageSource, title: str = "pixpick") -> Polygon:
         Image file path or BGR numpy array.
     title : str
         Window title shown to the user.
+    frame : int
+        0-based frame number to load when source is a video.
 
     Returns
     -------
@@ -74,9 +78,9 @@ def polygon(source: ImageSource, title: str = "pixpick") -> Polygon:
     SelectionCancelled
         If the user pressed Esc.
     """
-    return PolygonSelector().select(source, title=title)
+    return PolygonSelector().select(source, title=title, frame=frame)
 
-def line(source: ImageSource, title: str = "pixpick") -> Line:
+def line(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Line:
     """
     Open an interactive window on `source`, drag a line, return a Line.
 
@@ -86,6 +90,8 @@ def line(source: ImageSource, title: str = "pixpick") -> Line:
         Image file path or BGR numpy array.
     title : str
         Window title shown to the user.
+    frame : int
+        0-based frame number to load when source is a video.
 
     Returns
     -------
@@ -97,7 +103,7 @@ def line(source: ImageSource, title: str = "pixpick") -> Line:
         If the user pressed Esc.
     """
     from pixpick.selectors.line import LineSelector
-    return LineSelector().select(source, title=title)
+    return LineSelector().select(source, title=title, frame=frame)
 
 def load(path: str) -> Box | Multibox | Polygon | Line:
     """

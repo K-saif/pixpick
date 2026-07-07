@@ -23,7 +23,7 @@ class PolygonSelector:
     def __init__(self, backend: BaseBackend | None = None):
         self.backend = backend or CV2Backend()
 
-    def select(self, source: ImageSource, title: str = "pixpick") -> Polygon:
+    def select(self, source: ImageSource, title: str = "pixpick", frame: int = 0) -> Polygon:
         """
         Open an interactive window on `source`, let the user click polygon
         vertices, and return a Polygon.
@@ -34,6 +34,8 @@ class PolygonSelector:
             Image file path or BGR numpy array.
         title : str
             Window title.
+        frame : int
+            0-based frame number to load when source is a video.
 
         Returns
         -------
@@ -44,7 +46,7 @@ class PolygonSelector:
         SelectionCancelled
             If the user pressed Esc or closed the window.
         """
-        image = load_image(source)
+        image = load_image(source, frame=frame)
         w, h  = image_size(image)
 
         raw = self.backend.select_polygon(image, title=title)
