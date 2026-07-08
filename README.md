@@ -30,24 +30,26 @@ The standard workflow: open CVAT or Roboflow → grab coordinates → paste them
 ```python
 import pixpick
 
-region = pixpick.box("frame.jpg")      # drag a box on the image
-zone   = pixpick.polygon("frame.jpg")  # click polygon vertices
+region = pixpick.box("video.mp4", frame=10)  # drag a box on a specific video frame
+zone   = pixpick.polygon("image.jpg")        # click polygon vertices
 
 # coordinates are ready — unpack directly into any framework
 # YOLO:
 regioncounter = RegionCounter(
-     region=zone.yolo_region,  # pass region points
+     region=zone.yolo_region(),  # pass region points
      model="yolo26n.pt",
  )
 
 # same for YOLOE
-model.predict("frame.jpg", visual_prompt= region.yolo_prompt())
+model.predict("image.jpg", visual_prompt= region.yolo_prompt())
 
 # SAM1/SAM2:
 predictor.predict(box=region.sam())
 ```
 
-A window opens on your image. You interact. You get framework-ready coordinates back in Python. No round-trips.
+A window opens on your image, video, or a specific video frame. You interact. You get framework-ready coordinates back in Python. No round-trips.
+
+`pixpick.box()` and `pixpick.polygon()` both accept a `frame=` argument when the source is a video file.
 
 ---
 

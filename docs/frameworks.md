@@ -7,15 +7,15 @@ All conversion methods return a dict that unpacks directly into the framework's 
 **Inference on Region** — runs inference only inside the selected region.
 
 ```python
-region = pixpick.box("frame.jpg")
-results = model.predict("frame.jpg", **region.yolo_region())
-# expands to: model.predict("frame.jpg", crop=[x1, y1, x2, y2])
+region = pixpick.box("image.jpg")
+results = model.predict("image.jpg", **region.yolo_region())
+# expands to: model.predict("image.jpg", crop=[x1, y1, x2, y2])
 ```
 
 **Visual Prompt for YOLOE**
 
 ```python
-region = pixpick.box("frame.jpg")
+region = pixpick.box("image.jpg")
 
 visual_prompts = dict(
     bboxes= region.yolo_prompt()

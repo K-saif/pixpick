@@ -5,10 +5,12 @@ A selector opens a UI, captures user input, and returns a typed Selection object
 ## Box
 
 ```python
-region = pixpick.box("image.jpg")
+region = pixpick.box("video.mp4", frame=10)
 ```
 
 `pixpick.box()` returns a `Box` when you draw one rectangle, and a `Multibox` when you draw several. For multi-box results, use `region.boxes` for the wrapped `Box` objects and `region.xyxy` for all coordinates.
+
+`pixpick.box()` accepts an image path, a video path, or a BGR numpy array. Use `frame=` to choose the video frame.
 
 ### Properties
 
@@ -64,10 +66,12 @@ region.as_numpy     # np.array shape (N, 4)
 ## Polygon
 
 ```python
-zone = pixpick.polygon("image.jpg")
+zone = pixpick.polygon("video.mp4", frame=10)
 ```
 
 Minimum 3 points required before `Enter` confirms. Vertices are recorded in the order you click them.
+
+`pixpick.polygon()` accepts an image path, a video path, or a BGR numpy array. Use `frame=` to choose the video frame.
 
 ### Properties
 
