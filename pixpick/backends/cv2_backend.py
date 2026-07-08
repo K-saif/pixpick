@@ -309,10 +309,10 @@ class CV2Backend(BaseBackend):
 
             overlay = canvas.copy()
 
-            cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 0), -1)
+            cv2.rectangle(overlay, (x1, y1), (x2, y2), (255, 0, 128), -1)
             cv2.addWeighted(overlay, 0.15, canvas, 0.85, 0, canvas)
 
-            cv2.rectangle(canvas, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.rectangle(canvas, (x1, y1), (x2, y2), (255, 0, 128), 2)
 
         if self._drawing:
             start = self._image_to_display_point(self._start)
@@ -320,10 +320,10 @@ class CV2Backend(BaseBackend):
 
             overlay = canvas.copy()
 
-            cv2.rectangle(overlay, start, end, (0, 255, 0), -1)
+            cv2.rectangle(overlay, start, end, (255, 0, 128), -1)
             cv2.addWeighted(overlay, 0.15, canvas, 0.85, 0, canvas)
 
-            cv2.rectangle(canvas, start, end, (0, 255, 0), 2)
+            cv2.rectangle(canvas, start, end, (255, 0, 128), 2)
 
             x1 = min(start[0], end[0])
             y1 = min(start[1], end[1])
@@ -338,7 +338,7 @@ class CV2Backend(BaseBackend):
                 (x1, max(y1 - 8, 12)),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
-                (0, 255, 0),
+                (255, 0, 128),
                 1,
                 cv2.LINE_AA,
             )
@@ -362,7 +362,7 @@ class CV2Backend(BaseBackend):
             cv2.fillPoly(
                 overlay,
                 [pts],
-                (0, 255, 0),
+                (0, 0, 255),
             )
 
             cv2.addWeighted(
@@ -381,7 +381,7 @@ class CV2Backend(BaseBackend):
                 canvas,
                 [pts],
                 isClosed=False,
-                color=(0, 255, 0),
+                color=(0, 0, 255),
                 thickness=2,
             )
 
@@ -390,7 +390,7 @@ class CV2Backend(BaseBackend):
                 canvas,
                 points[-1],
                 points[0],
-                (0, 255, 0),
+                (0, 0, 255),
                 1,
                 cv2.LINE_AA,
             )
@@ -400,7 +400,7 @@ class CV2Backend(BaseBackend):
                 canvas,
                 pt,
                 4,
-                (0, 255, 0),
+                (0, 0, 255),
                 -1,
             )
 
@@ -410,7 +410,7 @@ class CV2Backend(BaseBackend):
                 (pt[0] + 5, pt[1] - 5),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
-                (0, 255, 0),
+                (0, 0, 255),
                 1,
                 cv2.LINE_AA,
             )
@@ -421,7 +421,7 @@ class CV2Backend(BaseBackend):
             (10, 25),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.7,
-            (0, 255, 0),
+            (0, 0, 255),
             2,
             cv2.LINE_AA,
         )
