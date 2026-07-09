@@ -11,7 +11,7 @@
 
 </div>
 
-![Project Overview](/docs/pixpick_main.png)
+![Project Overview](https://github.com/K-saif/pixpick/blob/main/docs/pixpick_main.png)
 
 ---
 ## The problem
