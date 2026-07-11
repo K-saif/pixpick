@@ -18,7 +18,7 @@ import tempfile
 import numpy as np
 import pytest
 
-from pixpick.core.selection import Box, Multibox, Polygon
+from pixpick.core.selection import Box, Multibox, Polygon, Line
 from pixpick import load
 
 
@@ -36,6 +36,13 @@ def polygon():
         points=[(100, 50), (400, 50), (400, 300), (100, 300)],
         image_width=1920,
         image_height=1080,
+    )
+
+@pytest.fixture
+def line():
+    return Line(
+        points=[(100, 50), (400, 300)],
+        image_width=1920, image_height=1080
     )
 
 @pytest.fixture
@@ -508,14 +515,13 @@ class TestLoadDispatcher:
         finally:
             os.unlink(path)
 
-    def test_unknown_type_raises(self):
-        with tempfile.NamedTemporaryFile(
-            suffix=".json", delete=False, mode="w"
-        ) as f:
-            json.dump({"type": "line"}, f)
+    def test_dispatches_line(self, line):
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
-            with pytest.raises(ValueError, match="Unknown selection type"):
-                load(path)
+            line.save(path)
+            result = load(path)
+            assert isinstance(result, Line)
+            assert result.center == line.center
         finally:
             os.unlink(path)

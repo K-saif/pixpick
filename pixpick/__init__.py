@@ -25,6 +25,7 @@ Quick start
 from __future__ import annotations
 from pixpick.selectors.box import BoxSelector
 from pixpick.selectors.polygon import PolygonSelector, SelectionCancelled
+from pixpick.selectors.line import LineSelector
 from pixpick.core.selection import Box, Multibox, Polygon, Line
 from pixpick.utils import ImageSource
 
@@ -102,7 +103,6 @@ def line(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Line:
     SelectionCancelled
         If the user pressed Esc.
     """
-    from pixpick.selectors.line import LineSelector
     return LineSelector().select(source, title=title, frame=frame)
 
 def load(path: str) -> Box | Multibox | Polygon | Line:
@@ -120,6 +120,8 @@ def load(path: str) -> Box | Multibox | Polygon | Line:
         return Multibox.load(path)
     elif sel_type == "polygon":
         return Polygon.load(path)
+    elif sel_type == "line":
+        return Line.load(path)
     else:
         raise ValueError(f"Unknown selection type in JSON: '{sel_type}'")
 
