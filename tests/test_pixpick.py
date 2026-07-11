@@ -508,14 +508,15 @@ class TestLoadDispatcher:
         finally:
             os.unlink(path)
 
-    def test_unknown_type_raises(self):
-        with tempfile.NamedTemporaryFile(
-            suffix=".json", delete=False, mode="w"
-        ) as f:
-            json.dump({"type": "line"}, f)
+    def test_dispatches_line(self):
+        from pixpick.core.selection import Line
+        line = Line(x1=100, y1=50, x2=400, y2=300, image_width=1920, image_height=1080)
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
-            with pytest.raises(ValueError, match="Unknown selection type"):
-                load(path)
+            line.save(path)
+            result = load(path)
+            assert isinstance(result, Line)
+            assert result.xyxy == line.xyxy
         finally:
             os.unlink(path)
