@@ -633,3 +633,16 @@ class Line:
         x2, y2 = self.points[1]
         return ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
 
+    # ------------------------------------------------------------------ #
+    # Adapter shortcuts                                                    #
+    # ------------------------------------------------------------------ #
+    def raw(self) -> dict:
+        """All formats at once."""
+        return {
+            "points":            self.points,
+            "numpy":             self.as_numpy.tolist(),
+            "normalized":        self.norm,
+            "normalized_numpy":  self.norm_numpy.tolist(),
+            "center":            self.center,
+            "length":            self.length,
+        }
