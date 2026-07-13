@@ -128,9 +128,9 @@ class Box:
             [self.x1, self.y1, self.x2, self.y2]
         ])
 
-    def sam(self) -> np.ndarray:
+    def sam(self) -> list[int]:
         """[(point1), (point2), (point3), (point4)] """
-        return np.array([self.x1, self.y1, self.x2, self.y2])
+        return [self.x1, self.y1, self.x2, self.y2]
 
     def raw(self) -> dict:
         """All formats at once — handy for debugging."""
@@ -318,9 +318,9 @@ class Multibox:
             for box in self.boxes
         ])
 
-    def sam(self) -> np.ndarray:
+    def sam(self) -> list[list[int]] :
         """[(point1), (point2), (point3), (point4)] """
-        return np.array(self.boxes, dtype=np.int32)
+        return self.boxes
 
 
     def raw(self) -> dict:
