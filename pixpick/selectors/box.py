@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 from pixpick.backends.base import BaseBackend
 from pixpick.backends.cv2_backend import CV2Backend
-from pixpick.core.selection import Box, Multibox
+from pixpick.core.select_box import Box, Multibox
 from pixpick.utils import load_image, image_size, ImageSource
 
 

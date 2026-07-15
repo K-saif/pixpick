@@ -26,7 +26,9 @@ from __future__ import annotations
 from pixpick.selectors.box import BoxSelector
 from pixpick.selectors.polygon import PolygonSelector, SelectionCancelled
 from pixpick.selectors.line import LineSelector
-from pixpick.core.selection import Box, Multibox, Polygon, Line
+from pixpick.core.select_box import Box, Multibox
+from pixpick.core.select_polygon import Polygon
+from pixpick.core.select_line import Line
 from pixpick.utils import ImageSource
 
 
