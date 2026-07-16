@@ -2,17 +2,17 @@ from __future__ import annotations
 import numpy as np
 from pixpick.backends.base import BaseBackend
 from pixpick.backends.cv2_backend import CV2Backend
-from pixpick.core.selection import Line
+from pixpick.core.box import Box, Multibox
 from pixpick.utils import load_image, image_size, ImageSource
 
 
-class LineSelector:
+class BoxSelector:
     """
-    Orchestrates: load image → open backend → capture drag → return Line.
+    Orchestrates: load image → open backend → capture drag → return Box.
 
     This is the only class that knows about both the backend and the
-    Line result object. Backends know nothing about Line; Line knows nothing
-    about backends. LineSelector is the glue.
+    Box result object. Backends know nothing about Box; Box knows nothing
+    about backends. BoxSelector is the glue.
 
     Parameters
     ----------
@@ -27,9 +27,9 @@ class LineSelector:
 
     def select(self, source: ImageSource, 
                title: str = "pixpick | drag to select | Enter=confirm | Backspace=clear | Esc=cancel",
-               frame: int = 0) -> Line:
+               frame: int = 0) -> Box:
         """
-        Open an interactive window on `source` and return a Line.
+        Open an interactive window on `source` and return a Box.
 
         Parameters
         ----------
@@ -42,8 +42,8 @@ class LineSelector:
 
         Returns
         -------
-        Line
-            A fully populated Line with all format properties and adapter methods.
+        Box
+            A fully populated Box with all format properties and adapter methods.
 
         Raises
         ------
@@ -54,13 +54,17 @@ class LineSelector:
         image = load_image(source, frame=frame)
         w, h  = image_size(image)
 
-        raw = self.backend.select_line(image, title=title)
+        boxes = self.backend.select_box(image, title=title)
 
-        if raw is None:
-            raise SelectionCancelled("Line selection was cancelled by the user.")
+        if boxes is None:
+            raise SelectionCancelled("Box selection was cancelled by the user.")
 
-        # raw is list of two points [(x1, y1), (x2, y2)]
-        return Line(points=raw, image_width=w, image_height=h)
+        if len(boxes) == 1:
+            x1, y1, x2, y2 = boxes[0]
+            return Box(x1=x1, y1=y1, x2=x2, y2=y2, image_width=w, image_height=h)
+        else:
+            return Multibox(boxes=boxes, image_width=w, image_height=h)
+        
 
 
 class SelectionCancelled(Exception):

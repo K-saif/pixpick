@@ -18,7 +18,9 @@ import tempfile
 import numpy as np
 import pytest
 
-from pixpick.core.selection import Box, Multibox, Polygon, Line
+from pixpick.core.box import Box, Multibox
+from pixpick.core.polygon import Polygon
+from pixpick.core.line import Line
 from pixpick import load
 
 
