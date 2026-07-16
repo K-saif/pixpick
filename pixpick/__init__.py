@@ -23,9 +23,9 @@ Quick start
     region = pixpick.load("zone.json")
 """
 from __future__ import annotations
-from pixpick.selectors.box import BoxSelector
-from pixpick.selectors.polygon import PolygonSelector, SelectionCancelled
-from pixpick.selectors.line import LineSelector
+from pixpick.selectors.box_picker import BoxSelector
+from pixpick.selectors.polygon_picker import PolygonSelector, SelectionCancelled
+from pixpick.selectors.line_picker import LineSelector
 from pixpick.core.select_box import Box, Multibox
 from pixpick.core.select_polygon import Polygon
 from pixpick.core.select_line import Line
