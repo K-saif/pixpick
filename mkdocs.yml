@@ -1,0 +1,31 @@
+site_name: PixPick
+site_description: Interactive Coordinate Picker for Computer Vision
+site_url: https://your-domain.com
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.instant
+    - content.code.copy
+    - search.highlight
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - tables
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Frameworks: frameworks.md
+  - Selectors: selectors.md
+  - Architecture: architecture.md
+  - Persistence: persistence.md
+  - Roadmap: roadmap.md
+  - Contributing: CONTRIBUTING.md
