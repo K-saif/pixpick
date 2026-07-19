@@ -12,7 +12,7 @@
 
 </div>
 
-![Project Overview](https://github.com/K-saif/pixpick/blob/main/docs/pixpick_main.png)
+<img src="https://raw.githubusercontent.com/K-saif/pixpick/main/docs/pixpick_main.png" alt="Project Overview" width="100%">
 
 ---
 ## The problem
