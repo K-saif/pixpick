@@ -1,6 +1,6 @@
 <div align="center">
 
-# pixpick 🎯
+# PixPick 
 
 **Interactive coordinate picker for Computer Vision — no external tools needed.**
 
@@ -67,9 +67,10 @@ pip install pixpick
 | Selector | How to use | Returns |
 |---|---|---|
 | `pixpick.box()` | Left-click + drag | `Box` |
-| `pixpick.polygon()` | Click vertices → `Enter` to confirm | `Polygon` |
+| `pixpick.polygon()` | Click vertices | `Polygon` |
+| `pixpick.line()` | Click start → click end | `Line` |
 
-**Box controls** — `drag` to draw · `R` to reset · `Esc` to cancel
+**Box controls** — `drag` to draw · `R` to reset · `Enter` to confirm · `Esc` to cancel
 
 **Polygon controls** — `LMB` add point · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
 
