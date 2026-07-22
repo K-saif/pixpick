@@ -33,6 +33,17 @@ def box():
     return Box(x1=100, y1=50, x2=400, y2=300, image_width=1920, image_height=1080)
 
 @pytest.fixture
+def multibox():
+    return Multibox(
+        boxes=[
+            [100, 50, 400, 300],
+            [500, 200, 800, 600],
+        ],
+        image_width=1920,
+        image_height=1080,
+    )
+
+@pytest.fixture
 def polygon():
     return Polygon(
         points=[(100, 50), (400, 50), (400, 300), (100, 300)],
@@ -165,30 +176,14 @@ class TestBoxAdapters:
 
 class TestMultibox:
 
-    def test_basic(self):
-        multibox = Multibox(
-            boxes=[
-                [100, 50, 400, 300],
-                [500, 200, 800, 600],
-            ],
-            image_width=1920,
-            image_height=1080,
-        )
+    def test_basic(self, multibox):
 
         assert multibox.xyxy == [
             [100, 50, 400, 300],
             [500, 200, 800, 600],
         ]
 
-    def test_properties(self):
-        multibox = Multibox(
-            boxes=[
-                [100, 50, 400, 300],
-                [500, 200, 800, 600],
-            ],
-            image_width=1920,
-            image_height=1080,
-        )
+    def test_properties(self, multibox):
 
         assert multibox.xywh == [
             [100, 50, 300, 250],
@@ -207,15 +202,7 @@ class TestMultibox:
             ),
         )
 
-    def test_raw_keys(self):
-        multibox = Multibox(
-            boxes=[
-                [100, 50, 400, 300],
-                [500, 200, 800, 600],
-            ],
-            image_width=1920,
-            image_height=1080,
-        )
+    def test_raw_keys(self, multibox):
 
         raw = multibox.raw()
         expected = {"xyxy", "xywh", "cxcywh", "normalized", "normalized_xywh", "numpy"}
@@ -228,15 +215,7 @@ class TestMultibox:
 
 class TestMultiboxPersistence:
 
-    def test_round_trip(self):
-        multibox = Multibox(
-            boxes=[
-                [100, 50, 400, 300],
-                [500, 200, 800, 600],
-            ],
-            image_width=1920,
-            image_height=1080,
-        )
+    def test_round_trip(self, multibox):
 
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
@@ -256,29 +235,11 @@ class TestMultiboxPersistence:
 
 class TestMultiboxVisualize:
 
-    def test_returns_same_shape(self, sample_image):
-        multibox = Multibox(
-            boxes=[
-                [100, 50, 400, 300],
-                [500, 200, 800, 600],
-            ],
-            image_width=1920,
-            image_height=1080,
-        )
-
+    def test_returns_same_shape(self, multibox, sample_image):
         vis = multibox.visualize(sample_image)
         assert vis.shape == sample_image.shape
 
-    def test_does_not_mutate_original(self, sample_image):
-        multibox = Multibox(
-            boxes=[
-                [100, 50, 400, 300],
-                [500, 200, 800, 600],
-            ],
-            image_width=1920,
-            image_height=1080,
-        )
-
+    def test_does_not_mutate_original(self, multibox, sample_image):
         original = sample_image.copy()
         multibox.visualize(sample_image)
         np.testing.assert_array_equal(sample_image, original)
@@ -503,6 +464,17 @@ class TestLoadDispatcher:
             result = load(path)
             assert isinstance(result, Box)
             assert result.xyxy == box.xyxy
+        finally:
+            os.unlink(path)
+
+    def test_dispatches_multibox(self, multibox):
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            multibox.save(path)
+            result = load(path)
+            assert isinstance(result, Multibox)
+            assert result.xyxy == multibox.xyxy
         finally:
             os.unlink(path)
 
