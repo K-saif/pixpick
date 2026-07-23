@@ -110,10 +110,20 @@ zone = pixpick.load("zone.json")   # or Polygon.load("zone.json")
 
 ---
 
+## Multi polygon
+
+```python
+zones = pixpick.multi_polygon("frame.jpg")
+print(zones.points)   # [[(x0,y0), ...], [(x0,y0), ...], ...]
+```
+
+`pixpick.multi_polygon()` uses the same interactive flow as the OpenCV polygon backend: draw a polygon, press Space to save it, draw another polygon, and press Enter to finish.
+
+---
+
 ## Coming in future releases
 
 | Selector | Interaction | Returns | Release |
 |---|---|---|---|
 | `pixpick.points()` | click (fg/bg toggle) | `Points` | v0.2 |
 | `pixpick.perspective()` | 4-corner click | `Perspective` | v0.2 |
-| `pixpick.multi_polygon()` | multiple polygons | `list[Polygon]` | v0.3 |

@@ -24,10 +24,10 @@ Quick start
 """
 from __future__ import annotations
 from pixpick.selectors.box_picker import BoxSelector
-from pixpick.selectors.polygon_picker import PolygonSelector, SelectionCancelled
+from pixpick.selectors.polygon_picker import PolygonSelector, MultiPolygonSelector, SelectionCancelled
 from pixpick.selectors.line_picker import LineSelector
 from pixpick.core.box import Box, Multibox
-from pixpick.core.polygon import Polygon
+from pixpick.core.polygon import Polygon, MultiPolygon
 from pixpick.core.line import Line
 from pixpick.utils import ImageSource
 
@@ -83,6 +83,31 @@ def polygon(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Poly
     """
     return PolygonSelector().select(source, title=title, frame=frame)
 
+
+def multi_polygon(source: ImageSource, title: str = "pixpick", frame: int = 0) -> MultiPolygon:
+    """
+    Open an interactive window on `source`, save completed polygons with Space, and return a MultiPolygon.
+
+    Parameters
+    ----------
+    source : str | Path | np.ndarray
+        Image file path or BGR numpy array.
+    title : str
+        Window title shown to the user.
+    frame : int
+        0-based frame number to load when source is a video.
+
+    Returns
+    -------
+    MultiPolygon
+
+    Raises
+    ------
+    SelectionCancelled
+        If the user pressed Esc.
+    """
+    return MultiPolygonSelector().select(source, title=title, frame=frame)
+
 def line(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Line:
     """
     Open an interactive window on `source`, drag a line, return a Line.
@@ -107,7 +132,7 @@ def line(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Line:
     """
     return LineSelector().select(source, title=title, frame=frame)
 
-def load(path: str) -> Box | Multibox | Polygon | Line:
+def load(path: str) -> Box | Multibox | Polygon | MultiPolygon | Line:
     """
     Load a previously saved selection from a JSON file.
     Dispatches to Box.load or Polygon.load based on the 'type' field.
@@ -122,6 +147,8 @@ def load(path: str) -> Box | Multibox | Polygon | Line:
         return Multibox.load(path)
     elif sel_type == "polygon":
         return Polygon.load(path)
+    elif sel_type == "multipolygon":
+        return MultiPolygon.load(path)
     elif sel_type == "line":
         return Line.load(path)
     else:
@@ -131,13 +158,16 @@ def load(path: str) -> Box | Multibox | Polygon | Line:
 __all__ = [
     "box",
     "polygon",
+
     "line",
     "load",
     "Box",
     "Polygon",
+    "MultiPolygon",
     "Line",
     "BoxSelector",
     "PolygonSelector",
+    "MultiPolygonSelector",
     "LineSelector",
     "SelectionCancelled",
 ]
