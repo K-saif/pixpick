@@ -74,10 +74,12 @@ class CV2Backend(BaseBackend):
     def select_polygon(
         self,
         image: np.ndarray,
-        title: str = "pixpick | polygon | LMB=add RMB=undo Enter=confirm Z=clear Esc=cancel",
+        title: str = "pixpick | polygon | LMB=add RMB=undo Space/Enter=confirm Z=clear Esc=cancel",
     ) -> list[tuple[int, int]] | None:
 
+        self._reset_state()
         self._points = []
+        self._polygons = []
         display_image = self._prepare_display_image(image)
 
         cv2.namedWindow(title, cv2.WINDOW_AUTOSIZE)
@@ -97,12 +99,80 @@ class CV2Backend(BaseBackend):
                 self._points.clear()
                 continue
 
-            if key in (13, 32):
+            if key == 32:
                 if len(self._points) < 3:
                     continue
 
+                self._polygons.append(self._points.copy())
+                self._points.clear()
+                continue
+
+            if key == 13:
+                if self._points:
+                    if len(self._points) < 3:
+                        continue
+
+                    polygon = self._points.copy()
+                    self._points.clear()
+                    cv2.destroyWindow(title)
+                    return [self._display_to_image_point(point) for point in polygon]
+
+    def select_multi_polygon(
+        self,
+        image: np.ndarray,
+        title: str = "pixpick | polygon | LMB=add RMB=undo Space=save polygon Enter=confirm all Z=clear Esc=cancel",
+    ) -> list[list[tuple[int, int]]] | None:
+
+        self._reset_state()
+        self._points = []
+        self._polygons = []
+        display_image = self._prepare_display_image(image)
+
+        cv2.namedWindow(title, cv2.WINDOW_AUTOSIZE)
+        cv2.setMouseCallback(title, self._polygon_callback)
+
+        while True:
+            canvas = self._draw_polygon(display_image)
+            cv2.imshow(title, canvas)
+
+            key = cv2.waitKey(20) & 0xFF
+
+            if key == 27:
                 cv2.destroyWindow(title)
-                return [self._display_to_image_point(point) for point in self._points]
+                return None
+
+            if key in (ord("z"), 8, 127):
+                self._points.clear()
+                self._polygons.clear()
+                continue
+
+            if key == 32:
+                if len(self._points) < 3:
+                    continue
+
+                self._polygons.append(self._points.copy())
+                self._points.clear()
+                continue
+
+            if key == 13:
+                if self._points:
+                    if len(self._points) < 3:
+                        continue
+
+                    self._polygons.append(self._points.copy())
+                    self._points.clear()
+
+                if not self._polygons:
+                    continue
+
+                cv2.destroyWindow(title)
+                return [
+                    [
+                        self._display_to_image_point(point)
+                        for point in polygon
+                    ]
+                    for polygon in self._polygons
+                ]
 
     def select_line(
         self,
@@ -199,6 +269,8 @@ class CV2Backend(BaseBackend):
         elif event == cv2.EVENT_RBUTTONDOWN:
             if self._points:
                 self._points.pop()
+            elif self._polygons:
+                self._polygons.pop()
 
     def _line_callback(
         self,
@@ -231,6 +303,7 @@ class CV2Backend(BaseBackend):
         self._confirmed = False
         self._cancelled = False
         self._points = []
+        self._polygons = []
 
     def _set_image_bounds(self, image: np.ndarray) -> None:
         self._image_height, self._image_width = image.shape[:2]
@@ -349,6 +422,45 @@ class CV2Backend(BaseBackend):
         """Draw current polygon preview."""
 
         canvas = image.copy()
+
+        for polygon in self._polygons:
+            if len(polygon) < 3:
+                continue
+
+            overlay = canvas.copy()
+            pts = np.array(polygon, dtype=np.int32)
+
+            cv2.fillPoly(
+                overlay,
+                [pts],
+                (0, 0, 255),
+            )
+
+            cv2.addWeighted(
+                overlay,
+                0.15,
+                canvas,
+                0.85,
+                0,
+                canvas,
+            )
+
+            cv2.polylines(
+                canvas,
+                [pts],
+                isClosed=True,
+                color=(0, 0, 255),
+                thickness=2,
+            )
+
+            for pt in polygon:
+                cv2.circle(
+                    canvas,
+                    pt,
+                    4,
+                    (0, 0, 255),
+                    -1,
+                )
 
         if not self._points:
             return canvas
