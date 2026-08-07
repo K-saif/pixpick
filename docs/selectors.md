@@ -62,6 +62,7 @@ region.as_numpy     # np.array shape (N, 4)
 ```
 
 properties and methods are the same for `Box` and `Multibox`, except that `Multibox` has a `boxes` property.
+
 ---
 
 ## Polygon
