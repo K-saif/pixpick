@@ -65,3 +65,7 @@ def image_size(img: np.ndarray) -> tuple[int, int]:
     """Return (width, height) from a cv2 BGR array."""
     h, w = img.shape[:2]
     return w, h
+
+
+class SelectionCancelled(Exception):
+    """Raised when the user cancels an interactive selection (Esc)."""

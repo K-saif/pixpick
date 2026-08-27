@@ -3,7 +3,7 @@ import numpy as np
 from pixpick.backends.base import BaseBackend
 from pixpick.backends.cv2_backend import CV2Backend
 from pixpick.core.line import Line, MultiLine
-from pixpick.utils import load_image, image_size, ImageSource
+from pixpick.utils import SelectionCancelled, load_image, image_size, ImageSource
 
 
 class LineSelector:
@@ -66,7 +66,3 @@ class LineSelector:
         else:
             # lines is a list of multiple points [(x1, y1), (x2, y2), ...]
             return MultiLine(lines=lines, image_width=w, image_height=h)
-
-
-class SelectionCancelled(Exception):
-    """Raised when the user cancels an interactive selection (Esc)."""

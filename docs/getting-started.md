@@ -92,7 +92,7 @@ region = pixpick.box("video.mp4", frame=15)
 If the user presses `Esc`, a `SelectionCancelled` exception is raised. Catch it if you need to handle that gracefully.
 
 ```python
-from pixpick.selectors.box import SelectionCancelled
+from pixpick.utils import SelectionCancelled
 
 try:
     region = pixpick.box("image.jpg")

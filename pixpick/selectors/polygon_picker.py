@@ -3,7 +3,7 @@ import numpy as np
 from pixpick.backends.base import BaseBackend
 from pixpick.backends.cv2_backend import CV2Backend
 from pixpick.core.polygon import Polygon, MultiPolygon
-from pixpick.utils import load_image, image_size, ImageSource
+from pixpick.utils import SelectionCancelled, load_image, image_size, ImageSource
 
 
 class PolygonSelector:
@@ -59,7 +59,3 @@ class PolygonSelector:
             return Polygon(points=polygons[0], image_width=w, image_height=h)
         else:
             return MultiPolygon(polygons=[Polygon(points=p, image_width=w, image_height=h) for p in polygons], image_width=w, image_height=h)
-
-
-class SelectionCancelled(Exception):
-    """Raised when the user cancels an interactive selection (Esc)."""
