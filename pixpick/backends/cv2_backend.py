@@ -64,7 +64,7 @@ class CV2Backend(BaseBackend):
                 self._boxes.clear()
                 continue
 
-            if key == 13:
+            if key in (13, 10):
                 if not self._boxes:
                     continue
 
@@ -112,7 +112,7 @@ class CV2Backend(BaseBackend):
                 self._points.clear()
                 continue
 
-            if key == 13:
+            if key in (13, 10):
                 if self._points:
                     if len(self._points) < 3:
                         continue
@@ -167,7 +167,7 @@ class CV2Backend(BaseBackend):
                 continue
 
 
-            if key == 13:
+            if key in (13, 10):
                 if not self._lines or self._line_points:
                     continue
 
@@ -203,7 +203,7 @@ class CV2Backend(BaseBackend):
                 self._points.clear()
                 continue
 
-            if key == 13:
+            if key in (13, 10):
                 if not self._points:
                     continue
 
