@@ -320,7 +320,7 @@ class MultiLine:
     def save(self, path: str | Path) -> None:
         """Serialise to JSON."""
         data = {
-            "type": "line",
+            "type": "multiline",
             "image_size": [self.image_width, self.image_height],
             "coordinates": {
                 "lines": self.lines,
@@ -335,7 +335,7 @@ class MultiLine:
         """Reconstruct from a saved JSON file."""
         data = json.loads(Path(path).read_text())
 
-        if data["type"] != "line":
+        if data["type"] != "multiline":
             raise ValueError(f"Expected type 'line', got '{data['type']}'")
 
         w, h = data["image_size"]
