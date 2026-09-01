@@ -3,7 +3,7 @@ import numpy as np
 from pixpick.backends.base import BaseBackend
 from pixpick.backends.cv2_backend import CV2Backend
 from pixpick.core.box import Box, Multibox
-from pixpick.utils import load_image, image_size, ImageSource
+from pixpick.utils import SelectionCancelled, load_image, image_size, ImageSource
 
 
 class BoxSelector:
@@ -65,7 +65,3 @@ class BoxSelector:
         else:
             return Multibox(boxes=boxes, image_width=w, image_height=h)
         
-
-
-class SelectionCancelled(Exception):
-    """Raised when the user cancels an interactive selection (Esc)."""

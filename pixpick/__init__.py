@@ -24,14 +24,14 @@ Quick start
 """
 from __future__ import annotations
 from pixpick.selectors.box_picker import BoxSelector
-from pixpick.selectors.polygon_picker import PolygonSelector, SelectionCancelled
+from pixpick.selectors.polygon_picker import PolygonSelector
 from pixpick.selectors.line_picker import LineSelector
 from pixpick.selectors.point_picker import PointSelector
 from pixpick.core.box import Box, Multibox
 from pixpick.core.polygon import Polygon, MultiPolygon
 from pixpick.core.line import Line
 from pixpick.core.point import Point
-from pixpick.utils import ImageSource
+from pixpick.utils import SelectionCancelled, ImageSource
 
 
 def box(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Box:
@@ -170,6 +170,8 @@ __all__ = [
     "Polygon",
     "MultiPolygon",
     "Line",
+    "Multiline",
+    "Point",
     "BoxSelector",
     "PolygonSelector",
     "LineSelector",
