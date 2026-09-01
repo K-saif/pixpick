@@ -3,7 +3,7 @@ import numpy as np
 from pixpick.backends.base import BaseBackend
 from pixpick.backends.cv2_backend import CV2Backend
 from pixpick.core.point import Point
-from pixpick.utils import load_image, image_size, ImageSource
+from pixpick.utils import SelectionCancelled, load_image, image_size, ImageSource
 
 
 class PointSelector:
@@ -58,7 +58,3 @@ class PointSelector:
         points, labels = result
 
         return Point(points=points, image_width=w, image_height=h, labels=labels)
-
-
-class SelectionCancelled(Exception):
-    """Raised when the user cancels an interactive selection (Esc)."""
