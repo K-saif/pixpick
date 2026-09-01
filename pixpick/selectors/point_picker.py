@@ -23,10 +23,10 @@ class PointSelector:
     def __init__(self, backend: BaseBackend | None = None):
         self.backend = backend or CV2Backend()
 
-    def select(self, source: ImageSource, title: str = "pixpick", frame: int = 0) -> list[tuple[int, int]]:
+    def select(self, source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point:
         """
         Open an interactive window on `source`, let the user click points,
-        and return a list of (x, y) coordinates.
+        and return a Point.
 
         Parameters
         ----------
@@ -39,8 +39,8 @@ class PointSelector:
 
         Returns
         -------
-        list[tuple[int, int]]
-            A list of (x, y) coordinates representing the selected points.
+        Point
+            The picked coordinates plus their foreground/background labels.
 
         Raises
         ------
@@ -50,9 +50,11 @@ class PointSelector:
         image = load_image(source, frame=frame)
         w, h  = image_size(image)
 
-        points = self.backend.select_point(image, title=title)
+        result = self.backend.select_point(image, title=title)
 
-        if points is None:
+        if result is None:
             raise SelectionCancelled("Point selection was cancelled by the user.")
 
-        return points   
+        points, labels = result
+
+        return Point(points=points, image_width=w, image_height=h, labels=labels)

@@ -60,3 +60,21 @@ class BaseBackend(ABC):
         List of (x, y) tuples (2 points), or None if cancelled.
         """
         ...
+
+    @abstractmethod
+    def select_point(
+        self,
+        image: np.ndarray,
+        title: str = "pixpick",
+    ) -> tuple[list[tuple[int, int]], list[int]] | None:
+        """
+        Let the user click points on the image, each tagged foreground
+        or background.
+
+        Returns
+        -------
+        (points, labels) where points is a list of (x, y) tuples and labels
+        holds one 1 (foreground) or 0 (background) per point,
+        or None if cancelled.
+        """
+        ...

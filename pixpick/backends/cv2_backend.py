@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 
 from pixpick.backends.base import BaseBackend
+from pixpick.core.point import BACKGROUND, FOREGROUND
 
 
 class CV2Backend(BaseBackend):
@@ -179,11 +180,13 @@ class CV2Backend(BaseBackend):
         image: np.ndarray,
         title: str = (
             "pixpick | points | "
-            "LMB=select point  RMB=undo  Enter=confirm  Z=reset  Esc=cancel"
+            "LMB=foreground  Shift+LMB=background  RMB=undo  "
+            "Enter=confirm  Z=reset  Esc=cancel"
         ),
-    ) -> list[tuple[int, int]] | None:
+    ) -> tuple[list[tuple[int, int]], list[int]] | None:
 
         self._points = []
+        self._point_labels = []
         display_image = self._prepare_display_image(image)
 
         cv2.namedWindow(title, cv2.WINDOW_AUTOSIZE)
@@ -201,6 +204,7 @@ class CV2Backend(BaseBackend):
 
             if key in (ord("z"), 8, 127):
                 self._points.clear()
+                self._point_labels.clear()
                 continue
 
             if key in (13, 10):
@@ -208,10 +212,13 @@ class CV2Backend(BaseBackend):
                     continue
 
                 cv2.destroyWindow(title)
-                return [
-                    self._display_to_image_point(point)
-                    for point in self._points
-                ]
+                return (
+                    [
+                        self._display_to_image_point(point)
+                        for point in self._points
+                    ],
+                    list(self._point_labels),
+                )
 
     # ------------------------------------------------------------------ #
     # Mouse callback                                                      #
@@ -310,7 +317,16 @@ class CV2Backend(BaseBackend):
     ) -> None:
 
         if event == cv2.EVENT_LBUTTONDOWN:
-            self._points.append((x, y))
+            # Shift held → background prompt, plain click → foreground.
+            label = BACKGROUND if flags & cv2.EVENT_FLAG_SHIFTKEY else FOREGROUND
+
+            self._points.append(self._clamp_point_to_display((x, y)))
+            self._point_labels.append(label)
+
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            if self._points:
+                self._points.pop()
+                self._point_labels.pop()
 
 
     # ------------------------------------------------------------------ #
@@ -324,6 +340,7 @@ class CV2Backend(BaseBackend):
         self._confirmed = False
         self._cancelled = False
         self._points = []
+        self._point_labels = []
         self._polygons = []
 
     def _set_image_bounds(self, image: np.ndarray) -> None:
@@ -620,17 +637,34 @@ class CV2Backend(BaseBackend):
         return canvas
 
     def _draw_point(self, image: np.ndarray) -> np.ndarray:
-        """Return a copy of image with completed and current points drawn."""
+        """Return a copy of image with the picked points drawn."""
 
         canvas = image.copy()
 
-        for point in self._points:
+        for point, label in zip(self._points, self._point_labels):
+            color = (0, 255, 0) if label == FOREGROUND else (0, 0, 255)
+
             cv2.circle(
                 canvas,
                 point,
                 6,
-                (0, 0, 255),
+                color,
                 -1,
             )
+
+        if not self._points:
+            return canvas
+
+        cv2.putText(
+            canvas,
+            f"fg: {self._point_labels.count(FOREGROUND)}  "
+            f"bg: {self._point_labels.count(BACKGROUND)}",
+            (10, 25),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0, 255, 0),
+            2,
+            cv2.LINE_AA,
+        )
 
         return canvas

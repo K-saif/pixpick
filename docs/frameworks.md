@@ -39,6 +39,25 @@ predictor.set_image(image)
 masks, scores, _ = predictor.predict(box=region.sam)
 ```
 
+**Point prompt**
+
+Click the object to segment, `Shift`+click anything you want excluded.
+
+```python
+point = pixpick.point("image.jpg")
+predictor.set_image(image)
+masks, scores, _ = predictor.predict(**point.sam)
+# expands to: predictor.predict(point_coords=(N,2) float32, point_labels=(N,) int32)
+```
+
+`Point.sam` returns a **dict** rather than a bare array — point prompts need
+two parallel arrays, so it unpacks with `**`. Combine it with a box prompt by
+unpacking both:
+
+```python
+masks, scores, _ = predictor.predict(box=region.sam, **point.sam)
+```
+
 ---
 
 

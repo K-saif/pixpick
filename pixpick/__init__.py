@@ -110,10 +110,12 @@ def line(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Line:
     """
     return LineSelector().select(source, title=title, frame=frame)
 
-def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> list[tuple[int, int]]:
+def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point:
     """
-    Open an interactive window on `source`, let the user click points,
-    and return a list of (x, y) coordinates.
+    Open an interactive window on `source`, click points, return a Point.
+
+    Controls: LMB=foreground  Shift+LMB=background  RMB=undo
+              Enter=confirm  Z=clear  Esc=cancel
 
     Parameters
     ----------
@@ -126,8 +128,9 @@ def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> list[t
 
     Returns
     -------
-    list[tuple[int, int]]
-        A list of (x, y) coordinates representing the selected points.
+    Point
+        The picked coordinates plus their foreground/background labels —
+        unpack straight into SAM with `predictor.predict(**picks.sam)`.
 
     Raises
     ------
@@ -136,7 +139,7 @@ def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> list[t
     """
     return PointSelector().select(source, title=title, frame=frame)
 
-def load(path: str) -> Box | Multibox | Polygon | MultiPolygon | Line:
+def load(path: str) -> Box | Multibox | Polygon | MultiPolygon | Line | Point:
     """
     Load a previously saved selection from a JSON file.
     Dispatches to Box.load or Polygon.load based on the 'type' field.
@@ -155,6 +158,8 @@ def load(path: str) -> Box | Multibox | Polygon | MultiPolygon | Line:
         return MultiPolygon.load(path)
     elif sel_type == "line":
         return Line.load(path)
+    elif sel_type == "point":
+        return Point.load(path)
     else:
         raise ValueError(f"Unknown selection type in JSON: '{sel_type}'")
 

@@ -72,12 +72,15 @@ pip install pixpick
 | `pixpick.box()` | Left-click + drag | `Box` |
 | `pixpick.polygon()` | Click vertices | `Polygon` |
 | `pixpick.line()` | Click start → click end | `Line` |
+| `pixpick.point()` | Click points (fg / bg) | `Point` |
 
 **Box controls** — `drag` to draw · `R` to reset · `Enter` to confirm · `Esc` to cancel
 
 **Polygon controls** — `LMB` add point · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
 
 **Line controls** — `LMB` start → `LMB` end · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
+
+**Point controls** — `LMB` foreground · `Shift`+`LMB` background · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
 
 ---
 
@@ -114,6 +117,20 @@ line.as_numpy            # np.array shape (2, 2)
 line.norm                # [(x0n,y0n), (x1n,y1n)]       0.0 – 1.0
 line.center              # (cx, cy)
 line.length              # pixels
+
+
+## ── Point ────────────────────────────────────────────────────
+point = pixpick.point("frame.jpg")
+
+point.points             # [(x0,y0), (x1,y1), ...]      absolute pixels
+point.labels             # [1, 0, ...]                  1 = foreground, 0 = background
+point.foreground         # [(x,y), ...]                 label 1 only
+point.background         # [(x,y), ...]                 label 0 only
+point.norm               # [(x0n,y0n), ...]             0.0 – 1.0
+point.centroid           # (cx, cy)
+point.bbox               # → Box   tight bbox around the point
+point.as_polygon         # → Polygon  (needs 3+ point)
+point.rescale(640, 640)  # → Point remapped to another resolution
 ```
 For more details, see [Selectors](docs/selectors.md).
 
@@ -126,6 +143,7 @@ For more details, see [Selectors](docs/selectors.md).
 | Ultralytics YOLOE — visual prompt | `Box` | `region.yolo_prompt` |
 | Ultralytics YOLO — region | `Box`/`Polygon` | `region.yolo_region` |
 | SAM / SAM2 / SAM3 — box prompt | `Box` | `region.sam` |
+| SAM / SAM2 / SAM3 — point prompt | `Point` | `point.sam` |
 | Supervision PolygonZone — polygon | `Polygon` | `region.supervision` |
 | Any other format | `Box` / `Polygon` | `region.raw` |
 
