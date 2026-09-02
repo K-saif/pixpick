@@ -202,7 +202,7 @@ class Multibox:
     Attributes
     ----------
     boxes : list[Box]
-        List of Box objects.
+        List of Box objects — each one validates and normalises itself.
     image_width, image_height : int
         Dimensions of the source image — needed for normalisation.
     """
@@ -214,108 +214,86 @@ class Multibox:
     # ------------------------------------------------------------------ #
     # Validation                                                           #
     # ------------------------------------------------------------------ #
+
     def __post_init__(self):
         if not self.boxes:
-            raise ValueError("Multibox must contain at least two Box.")
+            raise ValueError("Multibox must contain at least one Box.")
+
         for i, box in enumerate(self.boxes):
-            x1, y1, x2, y2 = box
-            # Normalise so x1 < x2 and y1 < y2 regardless of drag direction.
-            x1, x2 = sorted([x1, x2])
-            y1, y2 = sorted([y1, y2])
-
-            if x1 == x2 or y1 == y2:
-                raise ValueError(f"Box {i} has zero area — did the drag complete?")
-
-            if not (0 <= x1 < x2 <= self.image_width):
-                raise ValueError(
-                    f"for box {i} coords out of bounds: {x1}, {x2} (image width={self.image_width})"
-                )
-            if not (0 <= y1 < y2 <= self.image_height):
-                raise ValueError(
-                    f"for box {i} coords out of bounds: {y1}, {y2} (image height={self.image_height})"
+            if not isinstance(box, Box):
+                raise TypeError(
+                    f"Multibox expects Box objects, got {type(box).__name__} "
+                    f"at index {i} — build one with "
+                    f"Box(x1=..., y1=..., x2=..., y2=..., image_width=..., image_height=...)"
                 )
 
+            if box.image_width != self.image_width or box.image_height != self.image_height:
+                raise ValueError(
+                    f"Box {i} image size does not match Multibox size"
+                )
 
     # ------------------------------------------------------------------ #
     # Core format properties                                               #
     # ------------------------------------------------------------------ #
 
     @property
-    def xyxy(self) -> list[int]:
-        """[x1, y1, x2, y2] — absolute pixels for each box in boxes."""
-        return self.boxes
+    def xyxy(self) -> list[list[int]]:
+        """[[x1, y1, x2, y2], ...] — absolute pixels, one per box."""
+        return [box.xyxy for box in self.boxes]
 
     @property
-    def xywh(self) -> list[int]:
-        """[x, y, width, height] — top-left origin, absolute pixels for each box in boxes."""
-        return [[box[0], box[1], box[2] - box[0], box[3] - box[1]] for box in self.boxes]
+    def xywh(self) -> list[list[int]]:
+        """[[x, y, width, height], ...] — top-left origin, absolute pixels."""
+        return [box.xywh for box in self.boxes]
 
     @property
-    def cxcywh(self) -> list[float]:
-        """[cx, cy, width, height] — centre + size, absolute pixels for each box in boxes."""
-        return [[box[0] + (box[2] - box[0]) / 2, box[1] + (box[3] - box[1]) / 2, float(box[2] - box[0]), float(box[3] - box[1])] for box in self.boxes]
+    def cxcywh(self) -> list[list[float]]:
+        """[[cx, cy, width, height], ...] — centre + size, absolute pixels."""
+        return [box.cxcywh for box in self.boxes]
 
     @property
-    def norm(self) -> list[float]:
-        """[x1, y1, x2, y2] — values in [0, 1] for each box in boxes."""
-        return [[
-            box[0] / self.image_width,
-            box[1] / self.image_height,
-            box[2] / self.image_width,
-            box[3] / self.image_height,
-        ] for box in self.boxes]
+    def norm(self) -> list[list[float]]:
+        """[[x1, y1, x2, y2], ...] — values in [0, 1]."""
+        return [box.norm for box in self.boxes]
 
     @property
     def norm_xywh(self) -> list[list[float]]:
-        """[[x, y, w, h], ...] normalised — YOLO label format for each box in boxes."""
-        return [
-            [
-                box[0] / self.image_width,
-                box[1] / self.image_height,
-                (box[2] - box[0]) / self.image_width,
-                (box[3] - box[1]) / self.image_height,
-            ]
-            for box in self.boxes
-        ]
+        """[[x, y, w, h], ...] normalised — YOLO label format."""
+        return [box.norm_xywh for box in self.boxes]
 
     @property
-    def center(self) -> tuple[int, int]:
-        """(cx, cy) in absolute pixels.for each box in boxes."""
-        return [[(box[0] + box[2]) // 2, (box[1] + box[3]) // 2] for box in self.boxes]
-
+    def center(self) -> list[tuple[int, int]]:
+        """[(cx, cy), ...] in absolute pixels."""
+        return [box.center for box in self.boxes]
 
     @property
-    def area(self) -> int:
-        """Area in pixels² for each box in boxes."""
-        return [(box[2] - box[0]) * (box[3] - box[1]) for box in self.boxes]
+    def area(self) -> list[int]:
+        """Area in pixels², one per box."""
+        return [box.area for box in self.boxes]
+
+    @property
+    def nboxes(self) -> int:
+        return len(self.boxes)
 
     @property
     def as_numpy(self) -> np.ndarray:
         """Shape (N, 4) int32 array — [[x1, y1, x2, y2], ...]."""
-        return np.array(self.boxes, dtype=np.int32)
+        return np.array(self.xyxy, dtype=np.int32)
 
     @property
-    def yolo_region(self) -> list[float]:
-        """[(point1), (point2), (point3), (point4)] """
-        return [[
-            (box[0], box[1]),
-            (box[2], box[1]),
-            (box[2], box[3]),
-            (box[0], box[3])
-        ] for box in self.boxes ]
+    def yolo_region(self) -> list[list[tuple[int, int]]]:
+        """[[(point1), (point2), (point3), (point4)], ...] """
+        return [box.yolo_region for box in self.boxes]
 
     @property
     def yolo_prompt(self) -> np.ndarray:
-        """[(point1), (point2), (point3), (point4)] """
-        return np.array([
-            [box[0], box[1], box[2], box[3]]
-            for box in self.boxes
-        ])
+        """Shape (N, 4) array — [[x1, y1, x2, y2], ...] """
+        return np.vstack([box.yolo_prompt for box in self.boxes])
 
     @property
-    def sam(self) -> list[list[int]] :
-        """[(point1), (point2), (point3), (point4)] """
-        return self.boxes
+    def sam(self) -> list[list[int]]:
+        """[[x1, y1, x2, y2], ...] """
+        return [box.sam for box in self.boxes]
 
     @property
     def raw(self) -> dict:
@@ -339,7 +317,7 @@ class Multibox:
             "type": "multibox",
             "image_size": [self.image_width, self.image_height],
             "coordinates": {
-                "boxes":      self.boxes,
+                "boxes":      self.xyxy,
                 "normalized": self.norm,
             },
         }
@@ -352,7 +330,10 @@ class Multibox:
         if data["type"] != "multibox":
             raise ValueError(f"Expected type 'multibox', got '{data['type']}'")
         w, h = data["image_size"]
-        boxes = [list(box) for box in data["coordinates"]["boxes"]]
+        boxes = [
+            Box(x1=x1, y1=y1, x2=x2, y2=y2, image_width=w, image_height=h)
+            for x1, y1, x2, y2 in data["coordinates"]["boxes"]
+        ]
         return cls(boxes=boxes, image_width=w, image_height=h)
 
     # ------------------------------------------------------------------ #
@@ -367,14 +348,10 @@ class Multibox:
     ) -> np.ndarray:
         """Draw all boxes on a copy of image and return it."""
         canvas = image.copy()
-        for i, box in enumerate(self.boxes):
-            x1, y1, x2, y2 = box
-            cv2.rectangle(canvas, (x1, y1), (x2, y2), color, thickness)
-            label = f"{i}: ({x1},{y1}) -> ({x2},{y2})"
-            cv2.putText(
-                canvas, label, (x1, max(y1 - 8, 12)),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA,
-            )
+
+        for box in self.boxes:
+            canvas = box.visualize(canvas, color=color, thickness=thickness)
+
         return canvas
 
     def __repr__(self) -> str:
@@ -382,4 +359,3 @@ class Multibox:
             f"Multibox(nboxes={len(self.boxes)}, "
             f"size={self.image_width}x{self.image_height})"
         )
-
