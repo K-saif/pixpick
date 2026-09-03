@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 from pixpick.backends.base import BaseBackend
 from pixpick.backends.cv2_backend import CV2Backend
-from pixpick.core.point import Point
+from pixpick.core.point import Point, MultiPoint
 from pixpick.utils import SelectionCancelled, load_image, image_size, ImageSource
 
 
@@ -23,10 +23,10 @@ class PointSelector:
     def __init__(self, backend: BaseBackend | None = None):
         self.backend = backend or CV2Backend()
 
-    def select(self, source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point:
+    def select(self, source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point | MultiPoint:
         """
         Open an interactive window on `source`, let the user click points,
-        and return a Point.
+        and return a Point (one click) or a MultiPoint (several).
 
         Parameters
         ----------
@@ -39,7 +39,7 @@ class PointSelector:
 
         Returns
         -------
-        Point
+        Point | MultiPoint
             The picked coordinates plus their foreground/background labels.
 
         Raises
@@ -57,4 +57,12 @@ class PointSelector:
 
         points, labels = result
 
-        return Point(points=points, image_width=w, image_height=h, labels=labels)
+        picked = [
+            Point(x=x, y=y, image_width=w, image_height=h, label=label)
+            for (x, y), label in zip(points, labels)
+        ]
+
+        if len(picked) == 1:
+            return picked[0]
+
+        return MultiPoint(points=picked, image_width=w, image_height=h)

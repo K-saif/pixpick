@@ -29,8 +29,8 @@ from pixpick.selectors.line_picker import LineSelector
 from pixpick.selectors.point_picker import PointSelector
 from pixpick.core.box import Box, Multibox
 from pixpick.core.polygon import Polygon, MultiPolygon
-from pixpick.core.line import Line
-from pixpick.core.point import Point
+from pixpick.core.line import Line, MultiLine
+from pixpick.core.point import Point, MultiPoint
 from pixpick.utils import SelectionCancelled, ImageSource
 
 
@@ -110,9 +110,10 @@ def line(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Line:
     """
     return LineSelector().select(source, title=title, frame=frame)
 
-def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point:
+def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point | MultiPoint:
     """
-    Open an interactive window on `source`, click points, return a Point.
+    Open an interactive window on `source`, click points, return a Point
+    (one click) or a MultiPoint (several).
 
     Controls: LMB=foreground  Shift+LMB=background  RMB=undo
               Enter=confirm  Z=clear  Esc=cancel
@@ -128,7 +129,7 @@ def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point:
 
     Returns
     -------
-    Point
+    Point | MultiPoint
         The picked coordinates plus their foreground/background labels —
         unpack straight into SAM with `predictor.predict(**picks.sam)`.
 
@@ -139,7 +140,7 @@ def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point:
     """
     return PointSelector().select(source, title=title, frame=frame)
 
-def load(path: str) -> Box | Multibox | Polygon | MultiPolygon | Line | Point:
+def load(path: str) -> Box | Multibox | Polygon | MultiPolygon | Line | MultiLine | Point | MultiPoint:
     """
     Load a previously saved selection from a JSON file.
     Dispatches to Box.load or Polygon.load based on the 'type' field.
@@ -158,8 +159,12 @@ def load(path: str) -> Box | Multibox | Polygon | MultiPolygon | Line | Point:
         return MultiPolygon.load(path)
     elif sel_type == "line":
         return Line.load(path)
+    elif sel_type == "multiline":
+        return MultiLine.load(path)
     elif sel_type == "point":
         return Point.load(path)
+    elif sel_type == "multipoint":
+        return MultiPoint.load(path)
     else:
         raise ValueError(f"Unknown selection type in JSON: '{sel_type}'")
 
@@ -175,8 +180,9 @@ __all__ = [
     "Polygon",
     "MultiPolygon",
     "Line",
-    "Multiline",
+    "MultiLine",
     "Point",
+    "MultiPoint",
     "BoxSelector",
     "PolygonSelector",
     "LineSelector",
