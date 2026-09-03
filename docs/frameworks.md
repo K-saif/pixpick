@@ -50,8 +50,11 @@ masks, scores, _ = predictor.predict(**point.sam)
 # expands to: predictor.predict(point_coords=(N,2) float32, point_labels=(N,) int32)
 ```
 
-`Point.sam` returns a **dict** rather than a bare array — point prompts need
-two parallel arrays, so it unpacks with `**`. Combine it with a box prompt by
+One click returns a `Point`, several return a `MultiPoint`. Both expose the
+same `.sam` property, so the call above works either way.
+
+`.sam` returns a **dict** rather than a bare array — point prompts need two
+parallel arrays, so it unpacks with `**`. Combine it with a box prompt by
 unpacking both:
 
 ```python
