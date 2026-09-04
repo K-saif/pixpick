@@ -29,7 +29,7 @@ from pixpick.selectors.line_picker import LineSelector
 from pixpick.selectors.point_picker import PointSelector
 from pixpick.core.box import Box, Multibox
 from pixpick.core.polygon import Polygon, MultiPolygon
-from pixpick.core.line import Line
+from pixpick.core.line import Line, MultiLine
 from pixpick.core.point import Point
 from pixpick.utils import SelectionCancelled, ImageSource
 
@@ -158,6 +158,8 @@ def load(path: str) -> Box | Multibox | Polygon | MultiPolygon | Line | Point:
         return MultiPolygon.load(path)
     elif sel_type == "line":
         return Line.load(path)
+    elif sel_type == "multiline":
+        return MultiLine.load(path)
     elif sel_type == "point":
         return Point.load(path)
     else:
