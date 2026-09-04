@@ -50,7 +50,6 @@ class LineSelector:
         SelectionCancelled
             If the user pressed Esc or closed the window.
         """
-        print(f"Opening interactive selection window for: {source}")
         image = load_image(source, frame=frame)
         w, h  = image_size(image)
 
@@ -59,10 +58,12 @@ class LineSelector:
         if lines is None:
             raise SelectionCancelled("Line selection was cancelled by the user.")
 
-        if len(lines) == 1:
-            # lines is a list of two points [(x1, y1), (x2, y2)]
-            return Line(points=lines[0], image_width=w, image_height=h)
+        picked = [
+            Line(points=list(points), image_width=w, image_height=h)
+            for points in lines
+        ]
 
-        else:
-            # lines is a list of multiple points [(x1, y1), (x2, y2), ...]
-            return MultiLine(lines=lines, image_width=w, image_height=h)
+        if len(picked) == 1:
+            return picked[0]
+
+        return MultiLine(lines=picked, image_width=w, image_height=h)

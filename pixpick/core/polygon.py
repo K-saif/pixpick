@@ -189,6 +189,13 @@ class MultiPolygon:
             raise ValueError("MultiPolygon must contain at least one Polygon.")
 
         for i, polygon in enumerate(self.polygons):
+            if not isinstance(polygon, Polygon):
+                raise TypeError(
+                    f"MultiPolygon expects Polygon objects, got {type(polygon).__name__} "
+                    f"at index {i} — build one with "
+                    f"Polygon(points=[...], image_width=..., image_height=...)"
+                )
+
             if polygon.image_width != self.image_width or polygon.image_height != self.image_height:
                 raise ValueError(
                     f"Polygon {i} image size does not match MultiPolygon size"

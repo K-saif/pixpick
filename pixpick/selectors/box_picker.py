@@ -50,7 +50,6 @@ class BoxSelector:
         SelectionCancelled
             If the user pressed Esc or closed the window.
         """
-        print(f"Opening interactive selection window for: {source}")
         image = load_image(source, frame=frame)
         w, h  = image_size(image)
 
@@ -59,9 +58,13 @@ class BoxSelector:
         if boxes is None:
             raise SelectionCancelled("Box selection was cancelled by the user.")
 
-        if len(boxes) == 1:
-            x1, y1, x2, y2 = boxes[0]
-            return Box(x1=x1, y1=y1, x2=x2, y2=y2, image_width=w, image_height=h)
-        else:
-            return Multibox(boxes=boxes, image_width=w, image_height=h)
+        picked = [
+            Box(x1=x1, y1=y1, x2=x2, y2=y2, image_width=w, image_height=h)
+            for x1, y1, x2, y2 in boxes
+        ]
+
+        if len(picked) == 1:
+            return picked[0]
+
+        return Multibox(boxes=picked, image_width=w, image_height=h)
         

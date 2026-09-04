@@ -106,7 +106,7 @@ region = BoxSelector(backend=NotebookBackend()).select("frame.jpg")
 
 ## Writing a custom backend
 
-Subclass `BaseBackend` and implement both methods. The return types are strict — selectors rely on them.
+Subclass `BaseBackend` and implement every abstract method (`select_box`, `select_polygon`, `select_line`, `select_point`). The return types are strict — selectors rely on them.
 
 ```python
 from pixpick.backends.base import BaseBackend

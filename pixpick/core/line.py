@@ -188,13 +188,12 @@ class MultiLine:
     Attributes
     ----------
     lines : list[Line]
-        List of Line objects.
+        List of Line objects — each one validates itself.
     image_width, image_height : int
         Dimensions of the source image — needed for normalisation.
     """
 
-
-    lines: list[tuple[int, int]]
+    lines: list[Line]
     image_width: int
     image_height: int
 
@@ -203,36 +202,40 @@ class MultiLine:
     # ------------------------------------------------------------------ #
 
     def __post_init__(self):
-        if len(self.lines) < 2:
-            raise ValueError(
-                f"MultiLine needs at least 2 lines, got {len(self.lines)}"
-            )
-        for line in self.lines:
-            for i, pt in enumerate(line):
-                x, y = pt
-                if not (0 <= x <= self.image_width and 0 <= y <= self.image_height):
-                    raise ValueError(
-                        f"Point {i} ({x},{y}) is outside image "
-                        f"({self.image_width}x{self.image_height})"
-                    )
+        if not self.lines:
+            raise ValueError("MultiLine must contain at least one Line.")
 
+        for i, line in enumerate(self.lines):
+            if not isinstance(line, Line):
+                raise TypeError(
+                    f"MultiLine expects Line objects, got {type(line).__name__} "
+                    f"at index {i} — build one with "
+                    f"Line(points=[(x1, y1), (x2, y2)], image_width=..., image_height=...)"
+                )
+
+            if line.image_width != self.image_width or line.image_height != self.image_height:
+                raise ValueError(
+                    f"Line {i} image size does not match MultiLine size"
+                )
 
     # ------------------------------------------------------------------ #
     # Core format properties                                               #
     # ------------------------------------------------------------------ #
 
     @property
-    def as_numpy(self) -> np.ndarray:
-        """Shape (N, 2, 2) int32 array — [[[x1,y1], [x2,y2]], ...]."""
-        return np.array(self.lines, dtype=np.int32)
+    def points(self) -> list[list[tuple[int, int]]]:
+        """[[(x1,y1), (x2,y2)], ...] — absolute pixels, one pair per line."""
+        return [line.points for line in self.lines]
 
     @property
-    def norm(self) -> list[tuple[float, float]]:
-        """Points normalised to [0, 1]. for all lines."""
-        return [[
-            (x / self.image_width, y / self.image_height)
-            for x, y in line
-        ] for line in self.lines]
+    def as_numpy(self) -> np.ndarray:
+        """Shape (N, 2, 2) int32 array — [[[x1,y1], [x2,y2]], ...]."""
+        return np.array([line.as_numpy for line in self.lines], dtype=np.int32)
+
+    @property
+    def norm(self) -> list[list[tuple[float, float]]]:
+        """Points normalised to [0, 1], for all lines."""
+        return [line.norm for line in self.lines]
 
     @property
     def norm_numpy(self) -> np.ndarray:
@@ -240,68 +243,48 @@ class MultiLine:
         return np.array(self.norm, dtype=np.float32)
 
     @property
+    def nlines(self) -> int:
+        return len(self.lines)
+
+    @property
     def center(self) -> list[tuple[int, int]]:
         """Center point of each line in absolute pixels."""
-        return [
-            (
-                (x1 + x2) // 2,
-                (y1 + y2) // 2,
-            )
-            for (x1, y1), (x2, y2) in self.lines
-        ]
-    
+        return [line.center for line in self.lines]
+
     @property
     def length(self) -> list[float]:
         """Length of each line in pixels."""
-        return [
-            ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
-            for (x1, y1), (x2, y2) in self.lines
-        ]
+        return [line.length for line in self.lines]
 
     @property
     def start(self) -> list[tuple[int, int]]:
         """First point of each line."""
-        return [line[0] for line in self.lines]
+        return [line.start for line in self.lines]
 
     @property
     def end(self) -> list[tuple[int, int]]:
         """Last point of each line."""
-        return [line[1] for line in self.lines]
+        return [line.end for line in self.lines]
 
     @property
     def vector(self) -> list[tuple[float, float]]:
-        return [
-            (x2 - x1, y2 - y1)
-            for (x1, y1), (x2, y2) in self.lines
-        ]
+        return [line.vector for line in self.lines]
 
     @property
     def horizontal(self) -> list[list[tuple[int, int]]]:
         """Return new lines with the same lengths, aligned horizontally."""
-        return [
-            [
-                (int(cx - length / 2), cy),
-                (int(cx + length / 2), cy),
-            ]
-            for (cx, cy), length in zip(self.center, self.length)
-        ]
-
+        return [line.horizontal for line in self.lines]
 
     @property
     def vertical(self) -> list[list[tuple[int, int]]]:
         """Return new lines with the same lengths, aligned vertically."""
-        return [
-            [
-                (cx, int(cy - length / 2)),
-                (cx, int(cy + length / 2)),
-            ]
-            for (cx, cy), length in zip(self.center, self.length)
-        ]
-    
+        return [line.vertical for line in self.lines]
+
     @property
     def raw(self) -> dict:
         """All formats at once."""
         return {
+            "points":            self.points,
             "numpy":             self.as_numpy.tolist(),
             "normalized":        self.norm,
             "normalized_numpy":  self.norm_numpy.tolist(),
@@ -312,9 +295,8 @@ class MultiLine:
             "vector":            self.vector,
         }
 
-
     # ------------------------------------------------------------------ #
-    # Persistence
+    # Persistence                                                          #
     # ------------------------------------------------------------------ #
 
     def save(self, path: str | Path) -> None:
@@ -323,37 +305,35 @@ class MultiLine:
             "type": "multiline",
             "image_size": [self.image_width, self.image_height],
             "coordinates": {
-                "lines": self.lines,
+                "lines":      self.points,
                 "normalized": self.norm,
             },
         }
         Path(path).write_text(json.dumps(data, indent=2))
 
-
     @classmethod
-    def load(cls, path: str | Path) -> "Line":
+    def load(cls, path: str | Path) -> "MultiLine":
         """Reconstruct from a saved JSON file."""
         data = json.loads(Path(path).read_text())
 
         if data["type"] != "multiline":
-            raise ValueError(f"Expected type 'line', got '{data['type']}'")
+            raise ValueError(f"Expected type 'multiline', got '{data['type']}'")
 
         w, h = data["image_size"]
 
         lines = [
-            [tuple(point) for point in line]
+            Line(
+                points=[tuple(point) for point in line],
+                image_width=w,
+                image_height=h,
+            )
             for line in data["coordinates"]["lines"]
         ]
 
-        return cls(
-            lines=lines,
-            image_width=w,
-            image_height=h,
-        )
-
+        return cls(lines=lines, image_width=w, image_height=h)
 
     # ------------------------------------------------------------------ #
-    # Visualisation
+    # Visualisation                                                        #
     # ------------------------------------------------------------------ #
 
     def visualize(
@@ -365,29 +345,13 @@ class MultiLine:
         """Draw all lines on a copy of the image."""
         canvas = image.copy()
 
-        for line_idx, line in enumerate(self.lines):
-            pts = np.asarray(line, dtype=np.int32).reshape((-1, 1, 2))
-
-            cv2.polylines(
-                canvas,
-                [pts],
-                isClosed=False,
-                color=color,
-                thickness=thickness,
-            )
-
-            for point_idx, (x, y) in enumerate(line):
-                cv2.circle(canvas, (x, y), 4, color, -1)
-
-                cv2.putText(
-                    canvas,
-                    f"{line_idx}:{point_idx}",
-                    (x + 5, y - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.45,
-                    color,
-                    1,
-                    cv2.LINE_AA,
-                )
+        for line in self.lines:
+            canvas = line.visualize(canvas, color=color, thickness=thickness)
 
         return canvas
+
+    def __repr__(self) -> str:
+        return (
+            f"MultiLine(nlines={len(self.lines)}, "
+            f"size={self.image_width}x{self.image_height})"
+        )

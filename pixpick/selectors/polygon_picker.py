@@ -54,8 +54,14 @@ class PolygonSelector:
         if polygons is None:
             raise SelectionCancelled("Polygon selection was cancelled by the user.")
 
-        if len(polygons) == 1:
-            # polygons is list[tuple[int, int]] coming straight from the backend
-            return Polygon(points=polygons[0], image_width=w, image_height=h)
-        else:
-            return MultiPolygon(polygons=[Polygon(points=p, image_width=w, image_height=h) for p in polygons], image_width=w, image_height=h)
+
+        picked = [
+            Polygon(points=polygon, image_width=w, image_height=h)
+            for polygon in polygons
+        ]
+
+        if len(picked) == 1:
+            return picked[0]
+
+        return MultiPolygon(polygons=picked, image_width=w, image_height=h)
+    
