@@ -74,7 +74,7 @@ pip install pixpick
 | `pixpick.line()` | Click start → click end | `Line` |
 | `pixpick.point()` | Click points (fg / bg) | `Point` |
 
-**Box controls** — `drag` to draw · `R` to reset · `Enter` to confirm · `Esc` to cancel
+**Box controls** — `drag` add box · `z` clear · `Enter` confirm · `Esc` cancel
 
 **Polygon controls** — `LMB` add point · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
 
@@ -188,4 +188,4 @@ zone.save(ZONE)
 
 ## Contributing
 
-We welcome contributions! Please open a GitHub issue or submit a pull request. For more information, see [Contribution Guidelines](https://github.com/K-saif/pixpick/blob/main/CONTRIBUTING.md).
+We welcome contributions! Please open a GitHub issue or submit a pull request. For more information, see [Contribution Guidelines](https://github.com/K-saif/pixpick/blob/main/docs/CONTRIBUTING.md).
