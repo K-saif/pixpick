@@ -45,7 +45,7 @@ regioncounter = RegionCounter(
  )
 
 # same for YOLOE
-model.predict("image.jpg", visual_prompt= region.yolo_prompt)
+model.predict("image.jpg", visual_prompts=dict(bboxes=region.yolo_prompt, cls=classes))
 
 # SAM/SAM2/SAM3:
 predictor.predict(box=region.sam)
@@ -72,11 +72,13 @@ pip install pixpick
 | `pixpick.box()` | Left-click + drag | `Box` |
 | `pixpick.polygon()` | Click vertices | `Polygon` |
 | `pixpick.line()` | Click start → click end | `Line` |
-| `pixpick.point()` | Click points (fg / bg) | `Point` |
+| `pixpick.point()` | Click points (fg / bg) | `Point` / `MultiPoint` |
 
-**Box controls** — `drag` add box · `z` clear · `Enter` confirm · `Esc` cancel
+Make several selections in one pass and you get the matching wrapper — `Multibox`, `MultiPolygon`, `MultiLine` or `MultiPoint` — each holding a list of the singular objects.
 
-**Polygon controls** — `LMB` add point · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
+**Box controls** — `LMB` drag to draw · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
+
+**Polygon controls** — `LMB` add vertex · `RMB` undo · `Space` new polygon · `Z` clear · `Enter` confirm · `Esc` cancel
 
 **Line controls** — `LMB` start → `LMB` end · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
 
@@ -105,7 +107,7 @@ zone = pixpick.polygon("frame.jpg")
 zone.points              # [(x0,y0), (x1,y1), ...]     absolute pixels
 zone.as_numpy            # np.array shape (N, 2)
 zone.norm                # [(x0n,y0n), ...]             0.0 – 1.0
-zone.bbox                # → Box   tight bbox around the polygon
+zone.bbox                # [x1, y1, x2, y2]  tight bounds around the polygon
 zone.npoints             # int
 
 
@@ -117,20 +119,17 @@ line.as_numpy            # np.array shape (2, 2)
 line.norm                # [(x0n,y0n), (x1n,y1n)]       0.0 – 1.0
 line.center              # (cx, cy)
 line.length              # pixels
+line.vertical            # [(x,y), (x,y)]  same line re-drawn vertically
 
 
 ## ── Point ────────────────────────────────────────────────────
-point = pixpick.point("frame.jpg")
+pick = pixpick.point("frame.jpg")        # one click → Point
 
-point.points             # [(x0,y0), (x1,y1), ...]      absolute pixels
-point.labels             # [1, 0, ...]                  1 = foreground, 0 = background
-point.foreground         # [(x,y), ...]                 label 1 only
-point.background         # [(x,y), ...]                 label 0 only
-point.norm               # [(x0n,y0n), ...]             0.0 – 1.0
-point.centroid           # (cx, cy)
-point.bbox               # → Box   tight bbox around the point
-point.as_polygon         # → Polygon  (needs 3+ point)
-point.rescale(640, 640)  # → Point remapped to another resolution
+pick.xy                  # (x, y)                       absolute pixels
+pick.label               # 1 = foreground, 0 = background
+pick.norm                # (xn, yn)                     0.0 – 1.0
+pick.is_foreground       # bool
+pick.rescale(640, 640)   # → Point remapped to another resolution
 ```
 For more details, see [Selectors](docs/selectors.md).
 
@@ -143,8 +142,9 @@ For more details, see [Selectors](docs/selectors.md).
 | Ultralytics YOLOE — visual prompt | `Box` | `region.yolo_prompt` |
 | Ultralytics YOLO — region | `Box`/`Polygon` | `region.yolo_region` |
 | SAM / SAM2 / SAM3 — box prompt | `Box` | `region.sam` |
-| SAM / SAM2 / SAM3 — point prompt | `Point` | `point.sam` |
-| Supervision PolygonZone — polygon | `Polygon` | `region.supervision` |
+| SAM / SAM2 / SAM3 — point prompt | `Point` / `MultiPoint` | `picks.sam` |
+| Supervision PolygonZone — polygon | `Polygon` | `zone.supervision` |
+| Supervision KeyPoints — points | `Point` / `MultiPoint` | `picks.supervision` |
 | Any other format | `Box` / `Polygon` | `region.raw` |
 
 ---
