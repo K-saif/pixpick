@@ -19,7 +19,7 @@
 
 ## v0.3 — More selectors + environments
 
-- `Points` selector — click foreground/background points for SAM2 / SAM3
+- `Point` selector — click foreground/background points for SAM2 / SAM3 ✅
 - `Perspective` selector — 4-corner pick for BEV `sv.ViewTransformer`
 - `NotebookBackend` — Matplotlib-based, works in Jupyter and Colab
 - `GradioBackend` — works on headless servers and SSH sessions
