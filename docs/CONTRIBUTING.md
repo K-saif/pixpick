@@ -10,9 +10,9 @@ Follow these minimal architecture rules when extending `pixpick`:
 
 ### Adding a New Selector Type (e.g. Line, Point)
 
-1. **Core Data Structure**: Add a point or geometry dataclass to `core/<type>.py` with necessary properties (e.g., coordinate exports like `.xyxy`, `.sam()`) and persistence methods (`save()`, `load()`).
+1. **Core Data Structure**: Add a geometry dataclass to `core/<type>.py` with the coordinate properties (`.xyxy`, `.norm`, `.sam`, … — all properties, not methods) and persistence methods (`save()`, `load()`). Add a matching `Multi<Type>` that holds a `list[<Type>]` and delegates every property to its items.
 2. **Backend Engine**: Add `select_<type>()` to `BaseBackend` and implement its interactive drawing behavior in `CV2Backend`.
-3. **Selector Interface**: Create `selectors/<type>_picker.py` implementing `TypeSelector`.
+3. **Selector Interface**: Create `selectors/<type>_picker.py` with a `<Type>Selector` class — load the image, call the backend, wrap the result, and raise `SelectionCancelled` (from `pixpick.utils`) when the backend returns `None`.
 4. **Top-Level API**: Export the selector helper function (e.g., `pixpick.point()`) in `__init__.py`.
 
 > **Note**: No other foundational files should require changes.
@@ -25,9 +25,18 @@ Add properties or serialization methods directly to the targeted target class in
 # Example in core/box.py
 @property
 def xyxy(self) -> list[int]:
-    """[x1, y1, x2, y2] — absolute pixels for each box in boxes."""
-    return self.boxes
+    """[x1, y1, x2, y2] — absolute pixels."""
+    return [self.x1, self.y1, self.x2, self.y2]
+```
 
+On a `Multi*` class, delegate to the items rather than reimplementing the maths:
+
+```python
+# Example in core/box.py, on Multibox
+@property
+def xyxy(self) -> list[list[int]]:
+    """[[x1, y1, x2, y2], ...] — absolute pixels, one per box."""
+    return [box.xyxy for box in self.boxes]
 ```
 
 ---
