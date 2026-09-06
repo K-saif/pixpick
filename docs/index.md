@@ -2,7 +2,7 @@
 
 **Interactive coordinate picker for Computer Vision.**
 
-Draw boxes, polygons and lines on images or videos and instantly get coordinates for YOLO, SAM, YOLOE, OpenCV, and your own pipelines.
+Draw boxes, polygons, lines and points on images or videos and instantly get coordinates for YOLO, SAM, YOLOE, OpenCV, and your own pipelines.
 
 
 ![Project Overview](./pixpick_main.png)
@@ -27,6 +27,7 @@ import pixpick
 
 region = pixpick.box("video.mp4", frame=10)  # drag a box on a specific video frame
 zone   = pixpick.polygon("image.jpg")        # click polygon vertices
+picks  = pixpick.point("image.jpg")          # click foreground / background points
 ```
 
 ---
@@ -46,10 +47,17 @@ pip install pixpick
 | `pixpick.box()` | Left-click + drag | `Box` |
 | `pixpick.polygon()` | Click vertices | `Polygon` |
 | `pixpick.line()` | Click start → click end | `Line` |
+| `pixpick.point()` | Click points (fg / bg) | `Point` |
 
-**Box controls** — `drag` to draw · `R` to reset · `Enter` to confirm · `Esc` to cancel
+Draw several and you get the matching wrapper instead — `Multibox`, `MultiPolygon`, `MultiLine` or `MultiPoint`.
 
-**Polygon controls** — `LMB` add point · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
+**Box controls** — `LMB` drag to draw · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
+
+**Polygon controls** — `LMB` add vertex · `RMB` undo · `Space` start a new polygon · `Z` clear · `Enter` confirm · `Esc` cancel
+
+**Line controls** — `LMB` start → `LMB` end · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
+
+**Point controls** — `LMB` foreground · `Shift`+`LMB` background · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
 
 ---
 
@@ -71,9 +79,9 @@ region.area              # area of the box in pixels²
 # ── Polygon ───────────────────────────────────────────────────
 zone = pixpick.polygon("frame.jpg")
 
-zone.supervision         # Supervision PolygonZone object
+zone.supervision         # {"polygon": np.array} — unpack into sv.PolygonZone()
 zone.yolo_region         # coordinates in YOLO region format
-zone.bbox                # tight bbox around the polygon
+zone.bbox                # [x1, y1, x2, y2] tight bounds around the polygon
 zone.npoints             # int
 zone.norm                # normalized coordinates [(x0n,y0n), ...]  0.0 – 1.0
 
@@ -82,11 +90,21 @@ zone.norm                # normalized coordinates [(x0n,y0n), ...]  0.0 – 1.0
 line = pixpick.line("frame.jpg")
 
 line.center               # center point of the line (cx, cy)
-line.length               # length of the line
-line.start                # start point of the line (cx, cy)
-line.end                  # end point of the line (cx, cy)
-line.vertical             # True if vertical
-line.horizontal           # True if horizontal
+line.length               # length of the line in pixels
+line.start                # start point of the line (x1, y1)
+line.end                  # end point of the line (x2, y2)
+line.vertical             # the same line re-drawn vertically   [(x,y), (x,y)]
+line.horizontal           # the same line re-drawn horizontally [(x,y), (x,y)]
+
+
+# ── Point ────────────────────────────────────────────────────
+picks = pixpick.point("frame.jpg")
+
+picks.sam                 # {"point_coords": ..., "point_labels": ...} for SAM
+picks.xy                  # [(x0,y0), (x1,y1), ...]
+picks.labels              # [1, 0, ...]  1 = foreground, 0 = background
+picks.bbox                # Box — tight box around every point
+picks.centroid            # (cx, cy)
 ```
 For more details, see [Selectors](selectors.md).
 
@@ -99,5 +117,7 @@ For more details, see [Selectors](selectors.md).
 | Ultralytics YOLOE — visual prompt | `Box` | `region.yolo_prompt` |
 | Ultralytics YOLO — region | `Box`/`Polygon` | `region.yolo_region` |
 | SAM / SAM2 / SAM3 — box prompt | `Box` | `region.sam` |
-|| Supervision PolygonZone — polygon | `Polygon` | `region.supervision` |
-| Any other format | `Box` / `Polygon` | `region.raw` |
+| SAM / SAM2 / SAM3 — point prompt | `Point` / `MultiPoint` | `picks.sam` |
+| Supervision PolygonZone — polygon | `Polygon` | `zone.supervision` |
+| Supervision KeyPoints — points | `Point` / `MultiPoint` | `picks.supervision` |
+| Any other format | any type | `.raw` |
