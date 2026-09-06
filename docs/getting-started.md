@@ -31,16 +31,7 @@ A window opens on `image.jpg`. Drag a rectangle, release the mouse — done. The
 | Confirm selection | `Enter` |
 | Cancel | `Esc` |
 
-If you draw more than one box, `pixpick.box()` returns a `Multibox` that holds all selected coordinates.
-
-**Multibox selector**
-| Action | Control |
-|---|---|
-| Draw box | Left-click + drag |
-| Undo last box | Right-click |
-| Clear all boxes | `Z` or Backspace |
-| Confirm selection | `Enter` |
-| Cancel | `Esc` |
+If you draw more than one box, `pixpick.box()` returns a `Multibox` holding a `Box` per rectangle.
 
 **Polygon selector**
 
@@ -48,19 +39,37 @@ If you draw more than one box, `pixpick.box()` returns a `Multibox` that holds a
 |---|---|
 | Add vertex | Left-click |
 | Undo last vertex | Right-click |
-| Clear all | `Z` |
+| Start a new polygon (≥ 3 points) | `Space` |
+| Clear all | `Z` or Backspace |
 | Confirm (≥ 3 points) | `Enter` |
 | Cancel | `Esc` |
+
+Bank a polygon with `Space` and keep drawing to get a `MultiPolygon`.
 
 **Line selector**
 
 | Action | Control |
 |---|---|
-| Add endpoint | Left-click |
-| Undo last endpoint | Right-click |
-| Clear all | `Z` |
+| Add endpoint (two clicks make a line) | Left-click |
+| Undo last endpoint or line | Right-click |
+| Clear all | `Z` or Backspace |
 | Confirm | `Enter` |
 | Cancel | `Esc` |
+
+Keep clicking pairs of endpoints to draw several lines and get a `MultiLine`.
+
+**Point selector**
+
+| Action | Control |
+|---|---|
+| Add foreground point | Left-click |
+| Add background point | `Shift` + left-click |
+| Undo last point | Right-click |
+| Clear all | `Z` or Backspace |
+| Confirm | `Enter` |
+| Cancel | `Esc` |
+
+One click returns a `Point`, several return a `MultiPoint`. The labels are what SAM uses to include or exclude a region.
 
 ## Passing an array, image, or video frame
 
@@ -92,10 +101,12 @@ region = pixpick.box("video.mp4", frame=15)
 If the user presses `Esc`, a `SelectionCancelled` exception is raised. Catch it if you need to handle that gracefully.
 
 ```python
-from pixpick.utils import SelectionCancelled
+from pixpick import SelectionCancelled
 
 try:
     region = pixpick.box("image.jpg")
 except SelectionCancelled:
     print("No selection made.")
 ```
+
+Every selector raises the same `SelectionCancelled`, so one `except` covers all of them.

@@ -11,21 +11,23 @@ docs/
 ├── index.md                    # Home page
 ├── persistence.md              # Save, load, JSON schema
 ├── roadmap.md                  # What's coming next
-└── selectors.md                # All properties and methods for Box and Polygon
+└── selectors.md                # All properties and methods for every selection type
 pixpick/
 ├── backends/
-│   ├── base.py                 # AbstractBackend — contract for all backends
+│   ├── base.py                 # BaseBackend — contract for all backends
 │   └── cv2_backend.py          # CV2Backend (OpenCV window)
-├── core/                       
+├── core/
 │   ├── box.py                  # Box, Multibox
-│   ├── line.py                 # Line
-│   └── polygon.py              # Polygon, Multipolygon
-├── selectors/                  
+│   ├── line.py                 # Line, MultiLine
+│   ├── point.py                # Point, MultiPoint
+│   └── polygon.py              # Polygon, MultiPolygon
+├── selectors/
 │   ├── box_picker.py           # BoxSelector
 │   ├── line_picker.py          # LineSelector
+│   ├── point_picker.py         # PointSelector
 │   └── polygon_picker.py       # PolygonSelector
-├── __init__.py                 # box(), polygon(), load() — public API
-└── utils.py                    # load_image(), image_size()
+├── __init__.py                 # box(), polygon(), line(), point(), load() — public API
+└── utils.py                    # load_image(), image_size(), SelectionCancelled
 ```
 
 ## How the layers relate
@@ -36,7 +38,7 @@ pixpick.box("frame.jpg")
     ▼
 BoxSelector.select(source)
     ├── utils.load_image(source)     → np.ndarray
-    ├── CV2Backend.select_box(image) → [(x1, y1, x2, y2), ...] | None
+    ├── CV2Backend.select_box(image) → [[x1, y1, x2, y2], ...] | None
     └── Box(...) or Multibox(...)    → returned to caller
                 │
                 ├── .xyxy / .xywh / .norm / ...   (properties)
@@ -54,7 +56,10 @@ BoxSelector.select(source)
 A selector does three things: load the image, call the backend, wrap the result. No logic of its own.
 
 **`pixpick.load()` dispatches on the JSON `"type"` field.**
-You save a `Box` or `Polygon` and load it back with the same call. The dispatcher reads `"type"` and returns the right object.
+You save any selection and load it back with the same call. The dispatcher reads `"type"` and returns the right object — one of the eight types.
+
+**A `Multi*` type holds the singular objects, never raw coordinates.**
+`Multibox` holds `Box` objects, `MultiPolygon` holds `Polygon`, `MultiLine` holds `Line`, `MultiPoint` holds `Point`. Each wrapper validates only collection-level rules (non-empty, all items share the container's image size) and delegates every coordinate property to the items, so per-item validation lives in one place.
 
 
 
@@ -90,7 +95,7 @@ Pass a backend instance to any selector.
 
 ```python
 from pixpick.backends.cv2_backend import CV2Backend
-from pixpick.selectors.box import BoxSelector
+from pixpick.selectors.box_picker import BoxSelector
 
 selector = BoxSelector(backend=CV2Backend())
 region   = selector.select("frame.jpg")
@@ -119,28 +124,40 @@ class MyBackend(BaseBackend):
         self,
         image: np.ndarray,
         title: str = "pixpick",
-    ) -> tuple[int, int, int, int] | None:
-        # open your UI, capture drag
-        # return (x1, y1, x2, y2) or None if cancelled
+    ) -> list[list[int]] | None:
+        # open your UI, capture drags
+        # return [[x1, y1, x2, y2], ...] or None if cancelled
         ...
 
     def select_polygon(
         self,
         image: np.ndarray,
         title: str = "pixpick",
-    ) -> list[tuple[int, int]] | None:
+    ) -> list[list[tuple[int, int]]] | None:
         # open your UI, capture clicks
-        # return [(x0,y0), (x1,y1), ...] or None if cancelled
+        # return [[(x0,y0), (x1,y1), ...], ...]  — one list per polygon
+        # or None if cancelled
         ...
 
     def select_line(
         self,
         image: np.ndarray,
         title: str = "pixpick",
-    ) -> tuple[tuple[int, int], tuple[int, int]] | None:
+    ) -> list[tuple[tuple[int, int], tuple[int, int]]] | None:
         # open your UI, capture clicks
-        # return ((x0,y0), (x1,y1)) or None if cancelled
+        # return [((x0,y0), (x1,y1)), ...]  — one tuple per line
+        # or None if cancelled
+        ...
+
+    def select_point(
+        self,
+        image: np.ndarray,
+        title: str = "pixpick",
+    ) -> tuple[list[tuple[int, int]], list[int]] | None:
+        # open your UI, capture clicks
+        # return ([(x0,y0), ...], [label, ...])  — 1 = foreground, 0 = background
+        # or None if cancelled
         ...
 ```
 
-Both methods must return `None` on cancellation — selectors convert that into a `SelectionCancelled` exception.
+Every method returns a **list** even for a single selection — the selector decides whether to wrap the result in a `Multi*` type. All four must return `None` on cancellation; selectors convert that into a `SelectionCancelled` exception.
