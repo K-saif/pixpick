@@ -41,7 +41,7 @@ class CV2Backend(BaseBackend):
             "pixpick | boxes | "
             "Drag=LMB  RMB=undo  Enter=confirm  Z=clear  Esc=cancel"
         ),
-    ):
+    ) -> list[list[int]] | None:
 
         self._reset_state()
         self._boxes = []
