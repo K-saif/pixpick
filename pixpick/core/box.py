@@ -71,7 +71,7 @@ class Box:
 
     @property
     def cxcywh(self) -> list[float]:
-        """[cx, cy, width, height] — centre + size, absolute pixels."""
+        """[cx, cy, width, height] — centre + size, absolute pixels. YOLO label format."""
         w, h = self.x2 - self.x1, self.y2 - self.y1
         return [self.x1 + w / 2, self.y1 + h / 2, float(w), float(h)]
 
@@ -87,7 +87,7 @@ class Box:
 
     @property
     def norm_xywh(self) -> list[float]:
-        """[x, y, w, h] normalised — YOLO label format."""
+        """[x, y, w, h] normalised top-left origin, absolute pixels."""
         x1n, y1n, x2n, y2n = self.norm
         return [x1n, y1n, x2n - x1n, y2n - y1n]
 
@@ -248,7 +248,7 @@ class Multibox:
 
     @property
     def cxcywh(self) -> list[list[float]]:
-        """[[cx, cy, width, height], ...] — centre + size, absolute pixels."""
+        """[[cx, cy, width, height], ...] — centre + size, absolute pixels. YOLO label format."""
         return [box.cxcywh for box in self.boxes]
 
     @property
@@ -258,7 +258,7 @@ class Multibox:
 
     @property
     def norm_xywh(self) -> list[list[float]]:
-        """[[x, y, w, h], ...] normalised — YOLO label format."""
+        """[[x, y, w, h], ...] normalised top-left origin, absolute pixels."""
         return [box.norm_xywh for box in self.boxes]
 
     @property

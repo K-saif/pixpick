@@ -96,7 +96,7 @@ region = pixpick.box("frame.jpg")
 
 region.xyxy              # [x1, y1, x2, y2]            absolute pixels
 region.xywh              # [x, y, w, h]                absolute pixels
-region.norm_xywh         # [x, y, w, h]                0.0 – 1.0  ← YOLO label format
+region.cxcywh            # [cx, cy, w, h]              absolute pixels (YOLO format)
 region.center            # (cx, cy)
 region.area              # pixels²
 
