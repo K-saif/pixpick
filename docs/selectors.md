@@ -106,7 +106,7 @@ Click vertices in order. Minimum 3 points before `Enter` confirms. Press `Space`
 | `norm` | list of `(x, y)` tuples, 0.0 – 1.0 |
 | `norm_numpy` | np.array shape (N, 2) float32 |
 | `npoints` | `int` |
-| `bbox` | `[x1, y1, x2, y2]` — tight axis-aligned bounds |
+| `bbox` | `Box` — tight box around every point |
 | `image_width` / `image_height` | `int` — source image size |
 
 ### Framework properties
