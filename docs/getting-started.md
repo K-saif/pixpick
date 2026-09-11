@@ -17,7 +17,7 @@ region = pixpick.box("image.jpg")
 print(region.xyxy)   # [x1, y1, x2, y2]
 ```
 
-A window opens on `image.jpg`. Drag a rectangle, release the mouse — done. The window closes and `region` is ready to use.
+A window opens on `image.jpg`. Drag a rectangle, release the mouse — press `Enter`. The window closes and `region` is ready to use.
 
 ## Controls
 
