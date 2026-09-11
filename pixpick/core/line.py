@@ -103,8 +103,8 @@ class Line:
         cx, cy = self.center
         length = self.length
         half_length = length / 2
-        new_start = (int(cx - half_length), cy)
-        new_end = (int(cx + half_length), cy)
+        new_start = (max(0, int(cx - half_length)), cy)
+        new_end = (min(self.image_width, int(cx + half_length)), cy)
         return [new_start, new_end]
 
     @property
@@ -113,8 +113,8 @@ class Line:
         cx, cy = self.center
         length = self.length
         half_length = length / 2
-        new_start = (cx, int(cy - half_length))
-        new_end = (cx, int(cy + half_length))
+        new_start = (cx, max(0, int(cy - half_length)))
+        new_end = (cx, min(self.image_height, int(cy + half_length)))
         return [new_start, new_end]
 
     @property
