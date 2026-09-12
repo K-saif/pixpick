@@ -29,9 +29,9 @@ Drag a rectangle. Drag again to add more — `pixpick.box()` returns a `Box` for
 |---|---|
 | `xyxy` | `[x1, y1, x2, y2]` absolute pixels |
 | `xywh` | `[x, y, w, h]` absolute pixels |
-| `cxcywh` | `[cx, cy, w, h]` absolute pixels |
+| `cxcywh` | `[cx, cy, w, h]` absolute pixels (YOLO format) |
 | `norm` | `[x1, y1, x2, y2]` 0.0 – 1.0 |
-| `norm_xywh` | `[x, y, w, h]` 0.0 – 1.0 (YOLO label format) |
+| `norm_xywh` | `[x, y, w, h]` 0.0 – 1.0 normalised absolute pixels |
 | `center` | `(cx, cy)` absolute pixels |
 | `area` | `int` pixels² |
 | `as_numpy` | np.array shape (4,) int32 |
