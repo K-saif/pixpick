@@ -14,6 +14,12 @@ class BaseBackend(ABC):
 
     Adding a new environment (Jupyter, Gradio, …) means adding a new
     backend — zero changes to selectors or adapters.
+
+    Every select_* method returns a **list**, one entry per selection the
+    user made, even when that list holds a single entry. The selector
+    decides whether to wrap the result in a singular or a Multi* type.
+    All of them return None when the user cancels; selectors turn that
+    into a SelectionCancelled exception.
     """
 
     @abstractmethod
@@ -21,13 +27,14 @@ class BaseBackend(ABC):
         self,
         image: np.ndarray,
         title: str = "pixpick",
-    ) -> tuple[int, int, int, int] | None:
+    ) -> list[list[int]] | None:
         """
-        Let the user drag a rectangle on the image.
+        Let the user drag one or more rectangles on the image.
 
         Returns
         -------
-        (x1, y1, x2, y2) in absolute pixels, or None if cancelled.
+        [[x1, y1, x2, y2], ...] in absolute pixels — one list per
+        rectangle, or None if cancelled.
         """
         ...
 
@@ -36,13 +43,15 @@ class BaseBackend(ABC):
         self,
         image: np.ndarray,
         title: str = "pixpick",
-    ) -> list[tuple[int, int]] | None:
+    ) -> list[list[tuple[int, int]]] | None:
         """
-        Let the user click polygon vertices on the image.
+        Let the user click the vertices of one or more polygons.
 
         Returns
         -------
-        List of (x, y) tuples (≥ 3 points), or None if cancelled.
+        [[(x0, y0), (x1, y1), ...], ...] in absolute pixels — one vertex
+        list per polygon, each holding at least 3 points, or None if
+        cancelled.
         """
         ...
 
@@ -51,13 +60,14 @@ class BaseBackend(ABC):
         self,
         image: np.ndarray,
         title: str = "pixpick",
-    ) -> list[tuple[int, int]] | None:
+    ) -> list[tuple[tuple[int, int], tuple[int, int]]] | None:
         """
-        Let the user click line endpoints on the image.
+        Let the user click the endpoints of one or more lines.
 
         Returns
         -------
-        List of (x, y) tuples (2 points), or None if cancelled.
+        [((x0, y0), (x1, y1)), ...] in absolute pixels — one pair of
+        endpoints per line, or None if cancelled.
         """
         ...
 
@@ -73,8 +83,8 @@ class BaseBackend(ABC):
 
         Returns
         -------
-        (points, labels) where points is a list of (x, y) tuples and labels
-        holds one 1 (foreground) or 0 (background) per point,
+        ([(x0, y0), ...], [label, ...]) in absolute pixels — two parallel
+        lists, one label per point: 1 (foreground) or 0 (background),
         or None if cancelled.
         """
         ...
