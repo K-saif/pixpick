@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 @dataclass
 class Line:
     """
-    Immutable result of a line selection.
+    Result of a line selection.
 
     Attributes
     ----------
@@ -183,7 +183,7 @@ class Line:
 @dataclass
 class MultiLine:
     """
-    Immutable result of a multi-line selection.
+    Result of a multi-line selection.
 
     Attributes
     ----------

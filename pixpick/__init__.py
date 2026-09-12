@@ -9,7 +9,7 @@ Quick start
 
     # Box
     region = pixpick.box("frame.jpg")
-    model.predict("frame.jpg", **region.yolo_region)
+    model.predict("frame.jpg", region.yolo_region)
     print(region.xyxy)          # [x1, y1, x2, y2]
     print(region.norm)    # [0.12, 0.08, 0.64, 0.48]
 
@@ -34,7 +34,8 @@ from pixpick.core.point import Point, MultiPoint
 from pixpick.utils import SelectionCancelled, ImageSource
 
 
-def box(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Box:
+
+def box(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Box | Multibox:
     """
     Open an interactive window on `source`, drag a rectangle, return a Box.
 
@@ -59,7 +60,7 @@ def box(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Box:
     return BoxSelector().select(source, title=title, frame=frame)
 
 
-def polygon(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Polygon:
+def polygon(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Polygon | MultiPolygon:
     """
     Open an interactive window on `source`, click vertices, return a Polygon.
 
@@ -86,7 +87,7 @@ def polygon(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Poly
     return PolygonSelector().select(source, title=title, frame=frame)
 
 
-def line(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Line:
+def line(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Line | MultiLine:
     """
     Open an interactive window on `source`, drag a line, return a Line.
 

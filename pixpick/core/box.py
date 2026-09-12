@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 @dataclass
 class Box:
     """
-    Immutable result of a box selection.
+    Result of a box selection.
 
     Attributes
     ----------
@@ -108,7 +108,7 @@ class Box:
 
     @property
     def yolo_region(self) -> list[float]:
-        """[(point1), (point2), (point3), (point4)] """
+        """[(x1, y1), (x2, y1), (x2, y2), (x1, y2)] — for YOLO prompt."""
         return [
             (self.x1, self.y1),
             (self.x2, self.y1),
@@ -118,14 +118,14 @@ class Box:
 
     @property
     def yolo_prompt(self) -> np.ndarray:
-        """[(point1), (point2), (point3), (point4)] """
+        """Shape (4, 2) array — [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]"""
         return np.array([
             [self.x1, self.y1, self.x2, self.y2]
         ])
 
     @property
     def sam(self) -> list[int]:
-        """[(point1), (point2), (point3), (point4)] """
+        """[x1, y1, x2, y2] — for Segment Anything Model."""
         return [self.x1, self.y1, self.x2, self.y2]
 
     @property
@@ -197,7 +197,7 @@ class Box:
 @dataclass
 class Multibox:
     """
-    Immutable result of a multi-box selection.
+    Result of a multi-box selection.
 
     Attributes
     ----------
