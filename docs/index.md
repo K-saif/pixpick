@@ -103,8 +103,8 @@ picks = pixpick.point("frame.jpg")
 picks.sam                 # {"point_coords": ..., "point_labels": ...} for SAM
 picks.xy                  # [(x0,y0), (x1,y1), ...]
 picks.labels              # [1, 0, ...]  1 = foreground, 0 = background
-picks.bbox                # Box — tight box around every point
-picks.centroid            # (cx, cy)
+picks.bbox                # Box — tight box around every point (only for MultiPoint)
+picks.centroid            # (cx, cy) — (only for MultiPoint)
 ```
 For more details, see [Selectors](selectors.md).
 
