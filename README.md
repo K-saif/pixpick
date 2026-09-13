@@ -76,13 +76,7 @@ pip install pixpick
 
 Make several selections in one pass and you get the matching wrapper — `Multibox`, `MultiPolygon`, `MultiLine` or `MultiPoint` — each holding a list of the singular objects.
 
-**Box controls** — `LMB` drag to draw · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
-
-**Polygon controls** — `LMB` add vertex · `RMB` undo · `Space` new polygon · `Z` clear · `Enter` confirm · `Esc` cancel
-
-**Line controls** — `LMB` start → `LMB` end · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
-
-**Point controls** — `LMB` foreground · `Shift`+`LMB` background · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
+For more information on controls, see [Getting Started](docs/getting-started.md).
 
 ---
 
@@ -189,3 +183,7 @@ zone.save(ZONE)
 ## Contributing
 
 We welcome contributions! Please open a GitHub issue or submit a pull request. For more information, see [Contribution Guidelines](https://github.com/K-saif/pixpick/blob/main/docs/CONTRIBUTING.md).
+
+<a href="https://github.com/k-saif/pixpick/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=k-saif/pixpick" />
+</a>

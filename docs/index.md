@@ -51,13 +51,7 @@ pip install pixpick
 
 Draw several and you get the matching wrapper instead — `Multibox`, `MultiPolygon`, `MultiLine` or `MultiPoint`.
 
-**Box controls** — `LMB` drag to draw · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
-
-**Polygon controls** — `LMB` add vertex · `RMB` undo · `Space` start a new polygon · `Z` clear · `Enter` confirm · `Esc` cancel
-
-**Line controls** — `LMB` start → `LMB` end · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
-
-**Point controls** — `LMB` foreground · `Shift`+`LMB` background · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
+For more information on controls, see [Getting Started](getting-started.md).
 
 ---
 
