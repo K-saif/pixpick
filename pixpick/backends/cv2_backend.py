@@ -15,7 +15,7 @@ class CV2Backend(BaseBackend):
     --------
     Left-click + drag  : draw the box
     Enter / Space      : confirm selection
-    R                  : reset and redraw
+    z / backspace      : reset and redraw
     Esc                : cancel - returns None
 
     The live rubber-band rect is drawn on a scratch copy of the image

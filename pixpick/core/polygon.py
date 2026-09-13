@@ -4,6 +4,7 @@ import json
 import numpy as np
 from dataclasses import dataclass
 from pathlib import Path
+from pixpick.core.box import Box
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
 @dataclass
 class Polygon:
     """
-    Immutable result of a polygon selection.
+    Result of a polygon selection.
 
     Attributes
     ----------
@@ -72,8 +73,14 @@ class Polygon:
         xs = [p[0] for p in self.points]
         ys = [p[1] for p in self.points]
         x1, y1, x2, y2 = min(xs), min(ys), max(xs), max(ys)
-        xyxy = [x1, y1, x2, y2]
-        return xyxy
+        return Box(
+            x1=x1,
+            y1=y1,
+            x2=x2,
+            y2=y2,
+            image_width=self.image_width,
+            image_height=self.image_height,
+        )
 
     @property
     def npoints(self) -> int:
@@ -170,7 +177,7 @@ class Polygon:
 @dataclass
 class MultiPolygon:
     """
-    Immutable result of a multi-polygon selection.
+    Result of a multi-polygon selection.
 
     Attributes
     ----------
@@ -217,7 +224,7 @@ class MultiPolygon:
         return [polygon.norm_numpy for polygon in self.polygons]
 
     @property
-    def box(self) -> Box:
+    def bbox(self) -> list[Box]:
         """List of tight axis-aligned Boxes that enclose each polygon."""
         return [polygon.bbox for polygon in self.polygons]
     

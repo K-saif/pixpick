@@ -16,7 +16,7 @@ FOREGROUND = 1
 @dataclass
 class Point:
     """
-    Immutable result of a single point selection.
+    Result of a single point selection.
 
     Attributes
     ----------
@@ -209,7 +209,7 @@ class Point:
 @dataclass
 class MultiPoint:
     """
-    Immutable result of a multi-point selection.
+    Result of a multi-point selection.
 
     Attributes
     ----------

@@ -573,13 +573,16 @@ class TestPolygonProperties:
     def test_bbox_type(self, make_polygon):
         polygon = make_polygon()
         bbox = polygon.bbox
-        assert isinstance(bbox, list)
+        assert isinstance(bbox, Box)
 
     def test_bbox_values(self, make_polygon):
         polygon = make_polygon()
         # polygon is a rectangle (100,50)→(400,300)
         bbox = polygon.bbox
-        assert bbox == [100, 50, 400, 300]
+        assert bbox.x1 == 100
+        assert bbox.y1 == 50
+        assert bbox.x2 == 400
+        assert bbox.y2 == 300
 
     def test_n_points(self, make_polygon):
         polygon = make_polygon()
@@ -710,9 +713,9 @@ class TestMultiPolygonProperties:
     def test_bbox(self, make_multipolygon):
         multipolygon = make_multipolygon()
 
-        assert multipolygon.box == [
-            [100, 50, 400, 300],
-            [500, 200, 800, 600],
+        assert multipolygon.bbox == [
+            Box(x1=100, y1=50, x2=400, y2=300, image_width=1920, image_height=1080),
+            Box(x1=500, y1=200, x2=800, y2=600, image_width=1920, image_height=1080),
         ]
 
 
