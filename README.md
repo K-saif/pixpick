@@ -1,8 +1,10 @@
 <div align="center">
 
-# PixPick 
+# PixPick
 
-**Interactive coordinate picker for Computer Vision — no external tools needed.**
+**Draw on the frame. Get the coordinates back in Python.**
+
+Boxes, polygons, lines and points — picked interactively, returned as objects that drop straight into YOLO, SAM and Supervision.
 
 [![PyPI version](https://badge.fury.io/py/pixpick.svg)](https://badge.fury.io/py/pixpick)
 [![Downloads](https://static.pepy.tech/badge/pixpick/month)](https://pepy.tech/projects/pixpick)
@@ -17,17 +19,23 @@
 ---
 ## The problem
 
-Every major CV framework needs coordinates before it can run.
+Every CV pipeline starts with coordinates you don't have yet.
 
 ```python
-# YOLO 
-regioncounter = RegionCounter(region=[120, 80, 640, 480])    # where does this region come from?
+# YOLO
+counter = RegionCounter(region=[(120, 80), (640, 80), (640, 480), (120, 480)])   # where do these come from?
 
-# SAM2/SAM3
-predictor.predict(box=np.array([120, 80, 640, 480]))         # same problem
+# SAM2 / SAM3
+masks = predictor.predict(box=np.array([120, 80, 640, 480]))                     # same question
 ```
 
-The standard workflow: open CVAT or Roboflow → grab coordinates → paste them back into code. Every. Single. Time.
+So you do one of three things:
+
+- **Guess and rerun.** Type some numbers, run, squint at the output, nudge, run again.
+- **Write the throwaway script.** `cv2.setMouseCallback`, `print(x, y)`, copy from the terminal, paste into the real code, delete the script. Next project — write it again.
+- **Open an annotation tool** just to read pixel values off the cursor.
+
+None of that is the work. It's the step everyone hates and nobody automated.
 
 ## The fix
 
@@ -51,7 +59,7 @@ model.predict("image.jpg", visual_prompts=dict(bboxes=region.yolo_prompt, cls=cl
 predictor.predict(box=region.sam)
 ```
 
-A window opens on your image, video, or a specific video frame. You interact. You get framework-ready coordinates back in Python. No round-trips.
+A window opens on your image or video frame. You draw. The coordinates come back as Python objects, already in the shape each framework wants. No terminal copy-paste, no throwaway scripts.
 
 All selectors accept a `frame=` argument when the source is a video file.
 

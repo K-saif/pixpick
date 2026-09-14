@@ -1,8 +1,8 @@
 # PixPick
 
-**Interactive coordinate picker for Computer Vision.**
+**Draw on the frame. Get the coordinates back in Python.**
 
-Draw boxes, polygons, lines and points on images or videos and instantly get coordinates for YOLO, SAM, YOLOE, OpenCV, and your own pipelines.
+Boxes, polygons, lines and points — picked interactively, returned as objects that drop straight into YOLO, SAM and Supervision.
 
 
 ![Project Overview](./pixpick_main.png)
@@ -10,17 +10,25 @@ Draw boxes, polygons, lines and points on images or videos and instantly get coo
 ---
 ## Why PixPick?
 
-Most computer vision frameworks require coordinates before inference.
+Every CV pipeline starts with coordinates you don't have yet.
 
-Traditionally you have to:
+```python
+# YOLO
+counter = RegionCounter(region=[(120, 80), (640, 80), (640, 480), (120, 480)])   # where do these come from?
 
-1. Open CVAT or Roboflow
-2. Draw a region
-3. Copy the coordinates
-4. Paste them back into your code
+# SAM2 / SAM3
+masks = predictor.predict(box=np.array([120, 80, 640, 480]))                     # same question
+```
 
-PixPick lets you draw directly from Python and immediately returns framework-ready coordinates.
+So you do one of three things:
 
+- **Guess and rerun.** Type some numbers, run, squint at the output, nudge, run again.
+- **Write the throwaway script.** `cv2.setMouseCallback`, `print(x, y)`, copy from the terminal, paste into the real code, delete the script. Next project — write it again.
+- **Open an annotation tool** just to read pixel values off the cursor.
+
+None of that is the work. It's the step everyone hates and nobody automated.
+
+PixPick is that step, done once:
 
 ```python
 import pixpick
@@ -29,6 +37,8 @@ region = pixpick.box("video.mp4", frame=10)  # drag a box on a specific video fr
 zone   = pixpick.polygon("image.jpg")        # click polygon vertices
 picks  = pixpick.point("image.jpg")          # click foreground / background points
 ```
+
+A window opens on your image or video frame. You draw. The coordinates come back as Python objects, already in the shape each framework wants. No terminal copy-paste, no throwaway scripts.
 
 ---
 
