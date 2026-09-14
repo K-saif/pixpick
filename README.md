@@ -53,7 +53,7 @@ predictor.predict(box=region.sam)
 
 A window opens on your image, video, or a specific video frame. You interact. You get framework-ready coordinates back in Python. No round-trips.
 
-`pixpick.box()` and `pixpick.polygon()` both accept a `frame=` argument when the source is a video file.
+All selectors accept a `frame=` argument when the source is a video file.
 
 ---
 
@@ -131,7 +131,7 @@ For more details, see [Selectors](docs/selectors.md).
 
 ## Framework integration
 
-| Framework | Selector | Method |
+| Framework | Selector | Properties |
 |---|---|---|
 | Ultralytics YOLOE — visual prompt | `Box` | `region.yolo_prompt` |
 | Ultralytics YOLO — region | `Box`/`Polygon` | `region.yolo_region` |
@@ -139,7 +139,7 @@ For more details, see [Selectors](docs/selectors.md).
 | SAM / SAM2 / SAM3 — point prompt | `Point` / `MultiPoint` | `picks.sam` |
 | Supervision PolygonZone — polygon | `Polygon` | `zone.supervision` |
 | Supervision KeyPoints — points | `Point` / `MultiPoint` | `picks.supervision` |
-| Any other format | `Box` / `Polygon` | `region.raw` |
+| Any other format | all selectors | `region.raw` |
 
 ---
 
