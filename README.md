@@ -1,8 +1,10 @@
 <div align="center">
 
-# PixPick 
+# PixPick
 
-**Interactive coordinate picker for Computer Vision — no external tools needed.**
+**Draw on the frame. Get the coordinates back in Python.**
+
+Boxes, polygons, lines and points — picked interactively, returned as objects that drop straight into YOLO, SAM and Supervision.
 
 [![PyPI version](https://badge.fury.io/py/pixpick.svg)](https://badge.fury.io/py/pixpick)
 [![Downloads](https://static.pepy.tech/badge/pixpick/month)](https://pepy.tech/projects/pixpick)
@@ -17,17 +19,23 @@
 ---
 ## The problem
 
-Every major CV framework needs coordinates before it can run.
+Every CV pipeline starts with coordinates you don't have yet.
 
 ```python
-# YOLO 
-regioncounter = RegionCounter(region=[120, 80, 640, 480])    # where does this region come from?
+# YOLO
+counter = RegionCounter(region=[(120, 80), (640, 80), (640, 480), (120, 480)])   # where do these come from?
 
-# SAM2/SAM3
-predictor.predict(box=np.array([120, 80, 640, 480]))         # same problem
+# SAM2 / SAM3
+masks = predictor.predict(box=np.array([120, 80, 640, 480]))                     # same question
 ```
 
-The standard workflow: open CVAT or Roboflow → grab coordinates → paste them back into code. Every. Single. Time.
+So you do one of three things:
+
+- **Guess and rerun.** Type some numbers, run, squint at the output, nudge, run again.
+- **Write the throwaway script.** `cv2.setMouseCallback`, `print(x, y)`, copy from the terminal, paste into the real code, delete the script. Next project — write it again.
+- **Open an annotation tool** just to read pixel values off the cursor.
+
+None of that is the work. It's the step everyone hates and nobody automated.
 
 ## The fix
 
@@ -51,9 +59,9 @@ model.predict("image.jpg", visual_prompts=dict(bboxes=region.yolo_prompt, cls=cl
 predictor.predict(box=region.sam)
 ```
 
-A window opens on your image, video, or a specific video frame. You interact. You get framework-ready coordinates back in Python. No round-trips.
+A window opens on your image or video frame. You draw. The coordinates come back as Python objects, already in the shape each framework wants. No terminal copy-paste, no throwaway scripts.
 
-`pixpick.box()` and `pixpick.polygon()` both accept a `frame=` argument when the source is a video file.
+All selectors accept a `frame=` argument when the source is a video file.
 
 ---
 
@@ -76,13 +84,7 @@ pip install pixpick
 
 Make several selections in one pass and you get the matching wrapper — `Multibox`, `MultiPolygon`, `MultiLine` or `MultiPoint` — each holding a list of the singular objects.
 
-**Box controls** — `LMB` drag to draw · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
-
-**Polygon controls** — `LMB` add vertex · `RMB` undo · `Space` new polygon · `Z` clear · `Enter` confirm · `Esc` cancel
-
-**Line controls** — `LMB` start → `LMB` end · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
-
-**Point controls** — `LMB` foreground · `Shift`+`LMB` background · `RMB` undo · `Z` clear · `Enter` confirm · `Esc` cancel
+For more information on controls, see [Getting Started](docs/getting-started.md).
 
 ---
 
@@ -137,7 +139,7 @@ For more details, see [Selectors](docs/selectors.md).
 
 ## Framework integration
 
-| Framework | Selector | Method |
+| Framework | Selector | Properties |
 |---|---|---|
 | Ultralytics YOLOE — visual prompt | `Box` | `region.yolo_prompt` |
 | Ultralytics YOLO — region | `Box`/`Polygon` | `region.yolo_region` |
@@ -145,7 +147,7 @@ For more details, see [Selectors](docs/selectors.md).
 | SAM / SAM2 / SAM3 — point prompt | `Point` / `MultiPoint` | `picks.sam` |
 | Supervision PolygonZone — polygon | `Polygon` | `zone.supervision` |
 | Supervision KeyPoints — points | `Point` / `MultiPoint` | `picks.supervision` |
-| Any other format | `Box` / `Polygon` | `region.raw` |
+| Any other format | all selectors | `region.raw` |
 
 ---
 
@@ -189,3 +191,7 @@ zone.save(ZONE)
 ## Contributing
 
 We welcome contributions! Please open a GitHub issue or submit a pull request. For more information, see [Contribution Guidelines](https://github.com/K-saif/pixpick/blob/main/docs/CONTRIBUTING.md).
+
+<a href="https://github.com/k-saif/pixpick/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=k-saif/pixpick" />
+</a>
