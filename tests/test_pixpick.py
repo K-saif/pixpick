@@ -795,6 +795,24 @@ class TestMultiPolygonPersistence:
             os.unlink(path)
 
 
+# # ======================================================================== #
+# # Polygon — visualize                                                       #
+# # ======================================================================== #
+
+class TestMultiPolygonVisualize:
+
+    def test_returns_same_shape(self, make_multipolygon, sample_image):
+        multipolygon = make_multipolygon()
+        vis = multipolygon.visualize(sample_image)
+        assert vis.shape == sample_image.shape
+
+    def test_does_not_mutate_original(self, make_multipolygon, sample_image):
+        multipolygon = make_multipolygon()
+        original = sample_image.copy()
+        multipolygon.visualize(sample_image)
+        np.testing.assert_array_equal(sample_image, original)
+
+
 # ======================================================================== #
 # pixpick.load() dispatcher                                                 #
 # ======================================================================== #
