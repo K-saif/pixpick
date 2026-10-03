@@ -22,7 +22,7 @@ from pixpick.core.box import Box, Multibox
 from pixpick.core.polygon import Polygon, MultiPolygon
 from pixpick.core.line import Line, MultiLine
 from pixpick.core.point import Point, MultiPoint, FOREGROUND, BACKGROUND
-from pixpick import load
+from pixpick import load, polygon
 
 
 # ======================================================================== #
@@ -751,16 +751,49 @@ class TestMultiPolygonProperties:
         for item in result:
             assert "polygon" in item
 
+
 # ======================================================================== #
 # MultiPolygon — persistence                                                     #
 # ======================================================================== #
-# after fxing the multipolygon and multibox issue #64, persistence can be implemented same as polygon
+class TestMultiPolygonPersistence:
 
+    def test_round_trip(self, make_multipolygon):
+        multipolygon = make_multipolygon()
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            multipolygon.save(path)
+            reloaded = MultiPolygon.load(path)
+            assert reloaded.polygons == multipolygon.polygons
+            assert reloaded.image_width  == multipolygon.image_width
+            assert reloaded.image_height == multipolygon.image_height
+        finally:
+            os.unlink(path)
 
-# ======================================================================== #
-# MultiPolygon — visualize                                                       #
-# ======================================================================== #
-# after fxing the multipolygon and multibox issue #64, visualize can be implemented same as polygon
+    def test_save_json_schema(self, make_multipolygon):
+        multipolygon = make_multipolygon()
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            multipolygon.save(path)
+            data = json.loads(open(path).read())
+            assert data["type"] == "multipolygon"
+            assert "image_size" in data
+            assert "polygons" in data["coordinates"]
+        finally:
+            os.unlink(path)
+
+    def test_load_wrong_type_raises(self, make_multibox):
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            multibox = make_multibox()
+            multibox.save(path)
+            with pytest.raises(ValueError, match="Expected type 'multipolygon'"):
+                MultiPolygon.load(path)
+        finally:
+            os.unlink(path)
+
 
 # ======================================================================== #
 # pixpick.load() dispatcher                                                 #
