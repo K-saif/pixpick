@@ -671,7 +671,28 @@ class TestPolygonVisualize:
 # ======================================================================== #
 # Polygon — construction and properties                         #
 # ======================================================================== #
-# need to fix the polygon npoint for multipolygon then  only construction can be implemented same as polygon
+class TestMultiPolygonConstruction:
+
+    def test_basic(self, make_multipolygon):
+        multipolygon = make_multipolygon()
+        assert multipolygon.npoints == 4
+
+    def test_too_few_points_raises(self, make_multipolygon):
+        with pytest.raises(ValueError, match="at least 3"):
+            make_multipolygon(
+                points=[(0, 0), (100, 100)],
+                image_width=1920,
+                image_height=1080,)
+
+    def test_point_out_of_bounds_raises(self, make_multipolygon):
+        with pytest.raises(ValueError, match="outside image"):
+            make_multipolygon(
+                points=[(0, 0), (100, 100), (2000, 500)],
+                image_width=1920,
+                image_height=1080,
+            )
+
+
 
 # ======================================================================== #
 # MultiPolygon — properties                                                     #
