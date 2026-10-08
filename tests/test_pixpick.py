@@ -22,7 +22,7 @@ from pixpick.core.box import Box, Multibox
 from pixpick.core.polygon import Polygon, MultiPolygon
 from pixpick.core.line import Line, MultiLine
 from pixpick.core.point import Point, MultiPoint, FOREGROUND, BACKGROUND
-from pixpick import load
+from pixpick import load, polygon
 
 
 # ======================================================================== #
@@ -671,7 +671,28 @@ class TestPolygonVisualize:
 # ======================================================================== #
 # Polygon — construction and properties                         #
 # ======================================================================== #
-# need to fix the polygon npoint for multipolygon then  only construction can be implemented same as polygon
+class TestMultiPolygonConstruction:
+
+    def test_basic(self, make_multipolygon):
+        multipolygon = make_multipolygon()
+        assert multipolygon.npoints == 4
+
+    def test_too_few_points_raises(self, make_multipolygon):
+        with pytest.raises(ValueError, match="at least 3"):
+            make_multipolygon(
+                points=[(0, 0), (100, 100)],
+                image_width=1920,
+                image_height=1080,)
+
+    def test_point_out_of_bounds_raises(self, make_multipolygon):
+        with pytest.raises(ValueError, match="outside image"):
+            make_multipolygon(
+                points=[(0, 0), (100, 100), (2000, 500)],
+                image_width=1920,
+                image_height=1080,
+            )
+
+
 
 # ======================================================================== #
 # MultiPolygon — properties                                                     #
@@ -730,16 +751,67 @@ class TestMultiPolygonProperties:
         for item in result:
             assert "polygon" in item
 
+
 # ======================================================================== #
 # MultiPolygon — persistence                                                     #
 # ======================================================================== #
-# after fxing the multipolygon and multibox issue #64, persistence can be implemented same as polygon
+class TestMultiPolygonPersistence:
+
+    def test_round_trip(self, make_multipolygon):
+        multipolygon = make_multipolygon()
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            multipolygon.save(path)
+            reloaded = MultiPolygon.load(path)
+            assert reloaded.polygons == multipolygon.polygons
+            assert reloaded.image_width  == multipolygon.image_width
+            assert reloaded.image_height == multipolygon.image_height
+        finally:
+            os.unlink(path)
+
+    def test_save_json_schema(self, make_multipolygon):
+        multipolygon = make_multipolygon()
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            multipolygon.save(path)
+            data = json.loads(open(path).read())
+            assert data["type"] == "multipolygon"
+            assert "image_size" in data
+            assert "polygons" in data["coordinates"]
+        finally:
+            os.unlink(path)
+
+    def test_load_wrong_type_raises(self, make_multibox):
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            multibox = make_multibox()
+            multibox.save(path)
+            with pytest.raises(ValueError, match="Expected type 'multipolygon'"):
+                MultiPolygon.load(path)
+        finally:
+            os.unlink(path)
 
 
-# ======================================================================== #
-# MultiPolygon — visualize                                                       #
-# ======================================================================== #
-# after fxing the multipolygon and multibox issue #64, visualize can be implemented same as polygon
+# # ======================================================================== #
+# # Polygon — visualize                                                       #
+# # ======================================================================== #
+
+class TestMultiPolygonVisualize:
+
+    def test_returns_same_shape(self, make_multipolygon, sample_image):
+        multipolygon = make_multipolygon()
+        vis = multipolygon.visualize(sample_image)
+        assert vis.shape == sample_image.shape
+
+    def test_does_not_mutate_original(self, make_multipolygon, sample_image):
+        multipolygon = make_multipolygon()
+        original = sample_image.copy()
+        multipolygon.visualize(sample_image)
+        np.testing.assert_array_equal(sample_image, original)
+
 
 # ======================================================================== #
 # pixpick.load() dispatcher                                                 #
