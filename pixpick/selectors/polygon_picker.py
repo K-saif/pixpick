@@ -7,44 +7,35 @@ from pixpick.utils import SelectionCancelled, load_image, image_size, ImageSourc
 
 
 class PolygonSelector:
-    """
-    Orchestrates: load image → open backend → capture clicks → return Polygon.
+    """Orchestrates: load image → open backend → capture clicks → return Polygon.
 
     Mirrors BoxSelector exactly — same pattern, different backend method
     and different Selection type returned.
 
-    Parameters
-    ----------
-    backend : BaseBackend | None
-        Pass a backend instance to override auto-detection.
-        None → CV2Backend.
+    Args:
+        backend: Pass a backend instance to override auto-detection.
+            None means CV2Backend.
     """
 
     def __init__(self, backend: BaseBackend | None = None):
         self.backend = backend or CV2Backend()
 
     def select(self, source: ImageSource, title: str = "pixpick", frame: int = 0) -> Polygon:
-        """
-        Open an interactive window on `source`, let the user click polygon
+        """Open an interactive window on `source`, let the user click polygon
         vertices, and return a Polygon.
 
-        Parameters
-        ----------
-        source : str | Path | np.ndarray
-            Image file path or BGR numpy array.
-        title : str
-            Window title.
-        frame : int
-            0-based frame number to load when source is a video.
+        Args:
+            source: Image file path or BGR numpy array.
+            title: Window title.
+            frame: 0-based frame number to load when source is a video.
 
-        Returns
-        -------
-        Polygon
+        Returns:
+            A fully populated Polygon with all format properties and adapter
+            methods. If the user drew several polygons, a MultiPolygon
+            instead.
 
-        Raises
-        ------
-        SelectionCancelled
-            If the user pressed Esc or closed the window.
+        Raises:
+            SelectionCancelled: If the user pressed Esc or closed the window.
         """
         image = load_image(source, frame=frame)
         w, h  = image_size(image)
