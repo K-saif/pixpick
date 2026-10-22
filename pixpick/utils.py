@@ -20,10 +20,25 @@ VIDEO_EXTENSIONS = {
 
 
 def load_image(source: ImageSource, frame: int = 0) -> np.ndarray:
-    """
-    Accept an image/video file path (str / Path) or a raw numpy array.
-    For videos, load frame (0-based); by default this is the first frame.
-    Always returns a BGR uint8 np.ndarray, which is what cv2 expects.
+    """Load an image or video frame as a BGR NumPy array.
+
+    Accepts an image/video file path (``str`` or ``Path``) or a raw NumPy array.
+    For videos, loads the specified zero-based frame; by default, loads the
+    first frame. The returned array is in BGR ``uint8`` format, as expected by
+    OpenCV.
+
+    Args:
+        source (ImageSource): Image/video file path or a BGR NumPy array.
+        frame (int): Zero-based video frame index to load. Defaults to ``0``.
+
+    Returns:
+        np.ndarray: The image as a BGR NumPy array. For array input, returns a
+            copy of the provided array.
+
+    Raises:
+        ValueError: If ``frame`` is negative, the input array is not shaped
+            ``(H, W, 3)``, or OpenCV cannot open/read the specified file or frame.
+        FileNotFoundError: If the specified file path does not exist.
     """
     if frame < 0:
         raise ValueError(f"frame must be >= 0, got {frame}")
@@ -62,10 +77,17 @@ def load_image(source: ImageSource, frame: int = 0) -> np.ndarray:
 
 
 def image_size(img: np.ndarray) -> tuple[int, int]:
-    """Return (width, height) from a cv2 BGR array."""
+    """Return the width and height of an OpenCV BGR image.
+
+    Args:
+        img (np.ndarray): Image array in BGR format.
+
+    Returns:
+        tuple[int, int]: Image dimensions as ``(width, height)``.
+    """
     h, w = img.shape[:2]
     return w, h
 
 
 class SelectionCancelled(Exception):
-    """Raised when the user cancels an interactive selection (Esc)."""
+    """Raised when the user cancels an interactive selection with Esc."""

@@ -7,48 +7,37 @@ from pixpick.utils import SelectionCancelled, load_image, image_size, ImageSourc
 
 
 class LineSelector:
-    """
-    Orchestrates: load image → open backend → capture drag → return Line.
+    """Orchestrates: load image → open backend → capture drag → return Line.
 
     This is the only class that knows about both the backend and the
     Line result object. Backends know nothing about Line; Line knows nothing
     about backends. LineSelector is the glue.
 
-    Parameters
-    ----------
-    backend : BaseBackend | None
-        Pass a backend instance to override auto-detection.
-        None → CV2Backend (the only backend implemented in v0.1).
+    Args:
+        backend: Pass a backend instance to override auto-detection.
+            None means CV2Backend (the only backend implemented in v0.1).
     """
-    
+
     def __init__(self, backend: BaseBackend | None = None):
         self.backend = backend or CV2Backend()
 
 
-    def select(self, source: ImageSource, 
+    def select(self, source: ImageSource,
                title: str = "pixpick | drag to select | Enter=confirm | Backspace=clear | Esc=cancel",
                frame: int = 0) -> Line:
-        """
-        Open an interactive window on `source` and return a Line.
+        """Open an interactive window on `source` and return a Line.
 
-        Parameters
-        ----------
-        source : str | Path | np.ndarray
-            File path or BGR numpy array.
-        title : str
-            Window title.
-        frame : int
-            0-based frame number to load when source is a video.
+        Args:
+            source: File path or BGR numpy array.
+            title: Window title.
+            frame: 0-based frame number to load when source is a video.
 
-        Returns
-        -------
-        Line
-            A fully populated Line with all format properties and adapter methods.
+        Returns:
+            A fully populated Line with all format properties and adapter
+            methods. If the user drew several lines, a MultiLine instead.
 
-        Raises
-        ------
-        SelectionCancelled
-            If the user pressed Esc or closed the window.
+        Raises:
+            SelectionCancelled: If the user pressed Esc or closed the window.
         """
         image = load_image(source, frame=frame)
         w, h  = image_size(image)
