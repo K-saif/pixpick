@@ -8,18 +8,20 @@ from pixpick.core.point import BACKGROUND, FOREGROUND
 
 
 class CV2Backend(BaseBackend):
-    """
-    OpenCV imshow backend.
+    """OpenCV-based backend for interactive image selections.
 
-    Controls
-    --------
-    Left-click + drag  : draw the box
-    Enter / Space      : confirm selection
-    z / backspace      : reset and redraw
-    Esc                : cancel - returns None
+    This backend uses OpenCV windows to collect bounding boxes, polygons, lines,
+    and labeled points from the user. Selection coordinates are returned in
+    absolute image pixels.
 
-    The live rubber-band rect is drawn on a scratch copy of the image
-    so the original is never mutated.
+    Controls:
+        Left-click and drag: Draw a bounding box.
+        Enter or Space: Confirm a selection.
+        Z or Backspace: Reset or redraw.
+        Esc: Cancel and return ``None``.
+
+    The live rubber-band rectangle is drawn on a scratch copy of the image, so
+    the original image is never mutated.
     """
 
     _drawing: bool
@@ -42,6 +44,17 @@ class CV2Backend(BaseBackend):
             "Drag=LMB  RMB=undo  Enter=confirm  Z=clear  Esc=cancel"
         ),
     ) -> list[list[int]] | None:
+
+        """Let the user draw one or more bounding boxes.
+
+        Args:
+            image: Image on which to select boxes.
+            title: Window title and interaction instructions.
+
+        Returns:
+            A list of boxes in absolute pixel coordinates, each formatted as
+            ``[x1, y1, x2, y2]``. Returns ``None`` if the user cancels.
+        """
 
         self._reset_state()
         self._boxes = []
@@ -81,6 +94,18 @@ class CV2Backend(BaseBackend):
             "Enter=confirm  Z=clear  Esc=cancel"
         ),
     ) -> list[list[tuple[int, int]]] | None:
+
+        """Let the user select one or more polygons.
+
+        Args:
+            image: Image on which to select polygons.
+            title: Window title and interaction instructions.
+
+        Returns:
+            A list containing one list of absolute pixel-coordinate vertices
+            per polygon. Each polygon contains at least three points. Returns
+            ``None`` if the user cancels.
+        """
 
         self._reset_state()
         self._points = []
@@ -142,6 +167,18 @@ class CV2Backend(BaseBackend):
         ),
     ) -> list[tuple[tuple[int, int], tuple[int, int]]] | None:
 
+        """Let the user select one or more lines.
+
+        Args:
+            image: Image on which to select lines.
+            title: Window title and interaction instructions.
+
+        Returns:
+            A list of lines, each represented by two absolute pixel-coordinate
+            endpoints: ``((x1, y1), (x2, y2))``. Returns ``None`` if the user
+            cancels.
+        """
+
         self._lines = []
         self._line_points = []
         self._mouse_pos = None
@@ -184,6 +221,18 @@ class CV2Backend(BaseBackend):
             "Enter=confirm  Z=reset  Esc=cancel"
         ),
     ) -> tuple[list[tuple[int, int]], list[int]] | None:
+
+        """Let the user select foreground and background points.
+
+        Args:
+            image: Image on which to select points.
+            title: Window title and interaction instructions.
+
+        Returns:
+            A tuple containing a list of absolute pixel-coordinate points and
+            a parallel list of labels. Labels are ``1`` for foreground and
+            ``0`` for background. Returns ``None`` if the user cancels.
+        """
 
         self._points = []
         self._point_labels = []
@@ -233,6 +282,16 @@ class CV2Backend(BaseBackend):
         param,
     ) -> None:
 
+        """Handle mouse events for bounding-box selection.
+
+        Args:
+            event: OpenCV mouse event code.
+            x: Horizontal cursor position in display coordinates.
+            y: Vertical cursor position in display coordinates.
+            flags: OpenCV flags describing modifier keys and mouse state.
+            param: Optional user data passed by OpenCV.
+        """
+
         if event == cv2.EVENT_LBUTTONDOWN:
             self._drawing = True
             self._start = self._display_to_image_point((x, y))
@@ -269,6 +328,16 @@ class CV2Backend(BaseBackend):
         param,
     ) -> None:
 
+        """Handle mouse events for polygon selection.
+
+        Args:
+            event: OpenCV mouse event code.
+            x: Horizontal cursor position in display coordinates.
+            y: Vertical cursor position in display coordinates.
+            flags: OpenCV flags describing modifier keys and mouse state.
+            param: Optional user data passed by OpenCV.
+        """
+
         if event == cv2.EVENT_LBUTTONDOWN:
             self._points.append((x, y))
 
@@ -286,6 +355,16 @@ class CV2Backend(BaseBackend):
         flags: int,
         param,
     ) -> None:
+
+        """Handle mouse events for line selection.
+
+        Args:
+            event: OpenCV mouse event code.
+            x: Horizontal cursor position in display coordinates.
+            y: Vertical cursor position in display coordinates.
+            flags: OpenCV flags describing modifier keys and mouse state.
+            param: Optional user data passed by OpenCV.
+        """
 
         pos = self._clamp_point_to_display((x, y))
         self._mouse_pos = pos
@@ -316,6 +395,16 @@ class CV2Backend(BaseBackend):
         param,
     ) -> None:
 
+        """Handle mouse events for labeled-point selection.
+
+        Args:
+            event: OpenCV mouse event code.
+            x: Horizontal cursor position in display coordinates.
+            y: Vertical cursor position in display coordinates.
+            flags: OpenCV flags describing modifier keys and mouse state.
+            param: Optional user data passed by OpenCV.
+        """
+
         if event == cv2.EVENT_LBUTTONDOWN:
             # Shift held → background prompt, plain click → foreground.
             label = BACKGROUND if flags & cv2.EVENT_FLAG_SHIFTKEY else FOREGROUND
@@ -334,6 +423,9 @@ class CV2Backend(BaseBackend):
     # ------------------------------------------------------------------ #
 
     def _reset_state(self) -> None:
+        """Reset the backend's interactive selection state.
+        """
+
         self._drawing = False
         self._start = (0, 0)
         self._end = (0, 0)
@@ -344,9 +436,25 @@ class CV2Backend(BaseBackend):
         self._polygons = []
 
     def _set_image_bounds(self, image: np.ndarray) -> None:
+        """Store the dimensions of the source image.
+
+        Args:
+            image: Source image whose height and width are recorded.
+        """
+
         self._image_height, self._image_width = image.shape[:2]
 
     def _prepare_display_image(self, image: np.ndarray) -> np.ndarray:
+        """Prepare an image for display, resizing it if needed.
+
+        Args:
+            image: Source image to prepare for display.
+
+        Returns:
+            The original image if it fits the display bounds; otherwise, a
+            resized image.
+        """
+
         self._set_image_bounds(image)
 
         max_width = 1280
@@ -372,6 +480,15 @@ class CV2Backend(BaseBackend):
         )
 
     def _display_to_image_point(self, point: tuple[int, int]) -> tuple[int, int]:
+        """Convert a display-space point to source-image coordinates.
+
+        Args:
+            point: Point in display pixel coordinates.
+
+        Returns:
+            The corresponding clamped point in source-image coordinates.
+        """
+
         x, y = self._clamp_point_to_display(point)
 
         image_x = int(round(x / self._scale_x))
@@ -380,6 +497,15 @@ class CV2Backend(BaseBackend):
         return self._clamp_point_to_image((image_x, image_y))
 
     def _image_to_display_point(self, point: tuple[int, int]) -> tuple[int, int]:
+        """Convert a source-image point to display coordinates.
+
+        Args:
+            point: Point in source-image pixel coordinates.
+
+        Returns:
+            The corresponding clamped point in display coordinates.
+        """
+
         x, y = self._clamp_point_to_image(point)
 
         display_x = int(round(x * self._scale_x))
@@ -388,6 +514,15 @@ class CV2Backend(BaseBackend):
         return self._clamp_point_to_display((display_x, display_y))
 
     def _clamp_point_to_display(self, point: tuple[int, int]) -> tuple[int, int]:
+        """Clamp a point to the displayed image bounds.
+
+        Args:
+            point: Point in display pixel coordinates.
+
+        Returns:
+            The point clamped to the valid display bounds.
+        """
+
         x, y = point
 
         if self._display_width <= 0 or self._display_height <= 0:
@@ -399,6 +534,15 @@ class CV2Backend(BaseBackend):
         return (x, y)
 
     def _clamp_point_to_image(self, point: tuple[int, int]) -> tuple[int, int]:
+        """Clamp a point to the source-image bounds.
+
+        Args:
+            point: Point in source-image pixel coordinates.
+
+        Returns:
+            The point clamped to the valid source-image bounds.
+        """
+
         x, y = point
 
         if self._image_width <= 0 or self._image_height <= 0:
@@ -410,7 +554,14 @@ class CV2Backend(BaseBackend):
         return (x, y)
 
     def _draw_box(self, image: np.ndarray) -> np.ndarray:
-        """Return image with completed boxes and current rubber-band box."""
+        """Draw completed boxes and the active rubber-band box.
+
+        Args:
+            image: Display image on which to draw the selection overlays.
+
+        Returns:
+            A copy of the image with bounding-box overlays.
+        """
 
         canvas = image.copy()
 
@@ -457,7 +608,14 @@ class CV2Backend(BaseBackend):
         return canvas
 
     def _draw_polygon(self, image: np.ndarray) -> np.ndarray:
-        """Draw current polygon preview."""
+        """Draw completed polygons and the active polygon preview.
+
+        Args:
+            image: Display image on which to draw polygon overlays.
+
+        Returns:
+            A copy of the image with polygon overlays.
+        """
 
         canvas = image.copy()
 
@@ -579,7 +737,14 @@ class CV2Backend(BaseBackend):
         return canvas
 
     def _draw_line(self, image: np.ndarray) -> np.ndarray:
-        """Return a copy of image with completed and current lines drawn."""
+        """Draw completed lines and the active line preview.
+
+        Args:
+            image: Display image on which to draw line overlays.
+
+        Returns:
+            A copy of the image with line overlays.
+        """
 
         canvas = image.copy()
 
@@ -637,7 +802,14 @@ class CV2Backend(BaseBackend):
         return canvas
 
     def _draw_point(self, image: np.ndarray) -> np.ndarray:
-        """Return a copy of image with the picked points drawn."""
+        """Draw selected foreground and background points.
+
+        Args:
+            image: Display image on which to draw point overlays.
+
+        Returns:
+            A copy of the image with selected points and label counts.
+        """
 
         canvas = image.copy()
 
