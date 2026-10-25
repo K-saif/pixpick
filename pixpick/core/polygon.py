@@ -13,15 +13,13 @@ if TYPE_CHECKING:
 
 @dataclass
 class Polygon:
-    """
-    Result of a polygon selection.
+    """Represent a selected polygon.
 
-    Attributes
-    ----------
-    points : list[tuple[int, int]]
-        Ordered list of (x, y) vertices in absolute pixels.
-    image_width, image_height : int
-        Dimensions of the source image — needed for normalisation.
+    Attributes:
+        points: Ordered list of polygon vertices as ``(x, y)`` coordinates
+            in absolute pixels.
+        image_width: Width of the source image, used for normalization.
+        image_height: Height of the source image, used for normalization.
     """
 
     points: list[tuple[int, int]]
@@ -51,12 +49,21 @@ class Polygon:
 
     @property
     def as_numpy(self) -> np.ndarray:
-        """Shape (N, 2) int32 array — [[x0,y0], [x1,y1], ...]."""
+        """Return the polygon vertices as a NumPy array.
+
+        Returns:
+            np.ndarray: An ``int32`` array of shape ``(N, 2)`` containing
+                the absolute ``(x, y)`` coordinates.
+        """
         return np.array(self.points, dtype=np.int32)
 
     @property
     def norm(self) -> list[tuple[float, float]]:
-        """Points normalised to [0, 1]."""
+        """Return polygon vertices normalized to the range ``[0, 1]``.
+
+        Returns:
+            list[tuple[float, float]]: Normalized ``(x, y)`` coordinates.
+        """
         return [
             (x / self.image_width, y / self.image_height)
             for x, y in self.points
@@ -64,12 +71,20 @@ class Polygon:
 
     @property
     def norm_numpy(self) -> np.ndarray:
-        """Shape (N, 2) float32 array of normalised points."""
+        """Return normalized polygon vertices as a NumPy array.
+
+        Returns:
+            np.ndarray: A ``float32`` array of shape ``(N, 2)``.
+        """
         return np.array(self.norm, dtype=np.float32)
 
     @property
     def bbox(self) -> Box:
-        """Tight axis-aligned Box that encloses this polygon."""
+        """Return the tight axis-aligned bounding box around the polygon.
+
+        Returns:
+            Box: Bounding box enclosing all polygon vertices.
+        """
         xs = [p[0] for p in self.points]
         ys = [p[1] for p in self.points]
         x1, y1, x2, y2 = min(xs), min(ys), max(xs), max(ys)
@@ -84,21 +99,38 @@ class Polygon:
 
     @property
     def npoints(self) -> int:
+        """Return the number of vertices in the polygon.
+
+        Returns:
+            int: Number of vertices.
+        """
         return len(self.points)
 
     @property
     def yolo_region(self) -> list[tuple[int, int]]:
-        """[(point1), (point2), (point3), ...]"""
+        """Return polygon vertices in absolute pixel coordinates.
+
+        Returns:
+            list[tuple[int, int]]: Ordered ``(x, y)`` vertex coordinates.
+        """
         return self.points
 
     @property
     def supervision(self) -> dict:
-        """Ready to unpack into sv.PolygonZone()"""
+        """Return polygon data for use with ``sv.PolygonZone``.
+
+        Returns:
+            dict: Dictionary containing the polygon NumPy array.
+        """
         return {"polygon": self.as_numpy}
 
     @property
     def raw(self) -> dict:
-        """All formats at once."""
+        """Return polygon coordinates in all supported formats.
+
+        Returns:
+            dict: Coordinate representations useful for inspection and debugging.
+        """
         return {
             "points":            self.points,
             "numpy":             self.as_numpy.tolist(),
@@ -112,7 +144,14 @@ class Polygon:
     # ------------------------------------------------------------------ #
 
     def save(self, path: str | Path) -> None:
-        """Serialise to JSON."""
+        """Save the polygon selection to a JSON file.
+
+        Args:
+            path: Destination file path.
+
+        Raises:
+            OSError: If the file cannot be written.
+        """
         data = {
             "type": "polygon",
             "image_size": [self.image_width, self.image_height],
@@ -125,7 +164,21 @@ class Polygon:
 
     @classmethod
     def load(cls, path: str | Path) -> "Polygon":
-        """Reconstruct from a saved JSON file."""
+        """Load a polygon selection from a JSON file.
+
+        Args:
+            path: Path to the JSON file.
+
+        Returns:
+            Polygon: The reconstructed polygon.
+
+        Raises:
+            OSError: If the file cannot be read.
+            json.JSONDecodeError: If the file does not contain valid JSON.
+            KeyError: If required fields are missing.
+            ValueError: If the saved selection has the wrong type or invalid
+                polygon coordinates.
+        """
         data = json.loads(Path(path).read_text())
         if data["type"] != "polygon":
             raise ValueError(f"Expected type 'polygon', got '{data['type']}'")
@@ -144,7 +197,21 @@ class Polygon:
         thickness: int = 2,
         fill_alpha: float = 0.15,
     ) -> np.ndarray:
-        """Draw the polygon (filled + border + vertex dots) on a copy of image."""
+        """Draw the polygon on a copy of the image.
+
+        The visualization includes an optional translucent fill, a border,
+        vertex markers, and vertex index labels.
+
+        Args:
+            image: Source image as a NumPy array.
+            color: Fill, border, and marker color in BGR order.
+            thickness: Polygon border thickness in pixels.
+            fill_alpha: Fill opacity, from ``0.0`` (transparent) to ``1.0``
+                (opaque). A value of ``0.0`` disables the fill.
+
+        Returns:
+            np.ndarray: Copy of the image with the polygon visualization.
+        """
         canvas = image.copy()
         pts = self.as_numpy.reshape((-1, 1, 2))
 
@@ -176,15 +243,12 @@ class Polygon:
 
 @dataclass
 class MultiPolygon:
-    """
-    Result of a multi-polygon selection.
+    """Represent a selection containing multiple polygons.
 
-    Attributes
-    ----------
-    polygons : list[Polygon]
-        List of Polygon objects.
-    image_width, image_height : int
-        Dimensions of the source image — needed for normalisation.
+    Attributes:
+        polygons: List of ``Polygon`` objects.
+        image_width: Width of the source image, used for normalization.
+        image_height: Height of the source image, used for normalization.
     """
 
     polygons: list[Polygon]
@@ -210,42 +274,74 @@ class MultiPolygon:
 
     @property
     def as_numpy(self) -> list[np.ndarray]:
-        """List of (N, 2) int32 arrays, one per polygon."""
+        """Return each polygon as a NumPy array.
+
+        Returns:
+            list[np.ndarray]: ``int32`` arrays of shape ``(N, 2)``.
+        """
         return [polygon.as_numpy for polygon in self.polygons]
 
     @property
     def norm(self) -> list[list[tuple[float, float]]]:
-        """Points normalised to [0, 1] for each polygon."""
+        """Return normalized vertices for every polygon.
+
+        Returns:
+            list[list[tuple[float, float]]]: Normalized vertex coordinates.
+        """
         return [polygon.norm for polygon in self.polygons]
 
     @property
     def norm_numpy(self) -> list[np.ndarray]:
-        """List of (N, 2) float32 arrays, one per polygon."""
+        """Return normalized vertices as NumPy arrays.
+
+        Returns:
+            list[np.ndarray]: ``float32`` arrays of shape ``(N, 2)``.
+        """
         return [polygon.norm_numpy for polygon in self.polygons]
 
     @property
     def bbox(self) -> list[Box]:
-        """List of tight axis-aligned Boxes that enclose each polygon."""
+        """Return the bounding box for each polygon.
+
+        Returns:
+            list[Box]: Tight axis-aligned bounding boxes.
+        """
         return [polygon.bbox for polygon in self.polygons]
     
     @property
     def npoints(self) -> list[int]:
-        """List of length of polygon points."""
+        """Return the number of vertices in each polygon.
+
+        Returns:
+            list[int]: Vertex count for each polygon.
+        """
         return [len(polygon.points) for polygon in self.polygons]
 
     @property
     def yolo_region(self) -> list[list[tuple[int, int]]]:
-        """List of polygon point lists in absolute pixels."""
+        """Return the vertices of each polygon in absolute pixels.
+
+        Returns:
+            list[list[tuple[int, int]]]: Ordered vertex coordinates per polygon.
+        """
         return [polygon.points for polygon in self.polygons]
 
     @property
     def supervision(self) -> list[dict]:
-        """List of dicts ready to unpack into sv.PolygonZone() for each polygon."""
+        """Return polygon data for use with ``sv.PolygonZone``.
+
+        Returns:
+            list[dict]: Polygon dictionaries, one per polygon.
+        """
         return [polygon.supervision for polygon in self.polygons]
     
     @property
     def raw(self) -> dict:
-        """All formats at once — handy for debugging."""
+        """Return all polygon coordinate formats for debugging.
+
+        Returns:
+            dict: Coordinate representations for all polygons.
+        """
         return {
             "points": [polygon.npoints for polygon in self.polygons],
             "numpy": [polygon.as_numpy.tolist() for polygon in self.polygons],
@@ -255,7 +351,14 @@ class MultiPolygon:
         }
 
     def save(self, path: str | Path) -> None:
-        """Serialise to JSON."""
+        """Save the multi-polygon selection to a JSON file.
+
+        Args:
+            path: Destination file path.
+
+        Raises:
+            OSError: If the file cannot be written.
+        """
         data = {
             "type": "multipolygon",
             "image_size": [self.image_width, self.image_height],
@@ -268,7 +371,21 @@ class MultiPolygon:
 
     @classmethod
     def load(cls, path: str | Path) -> "MultiPolygon":
-        """Reconstruct from a saved JSON file."""
+        """Load a multi-polygon selection from a JSON file.
+
+        Args:
+            path: Path to the JSON file.
+
+        Returns:
+            MultiPolygon: The reconstructed multi-polygon selection.
+
+        Raises:
+            OSError: If the file cannot be read.
+            json.JSONDecodeError: If the file does not contain valid JSON.
+            KeyError: If required fields are missing.
+            ValueError: If the saved selection has the wrong type or invalid
+                polygon coordinates.
+        """
         data = json.loads(Path(path).read_text())
         if data["type"] != "multipolygon":
             raise ValueError(f"Expected type 'multipolygon', got '{data['type']}'")
@@ -288,7 +405,18 @@ class MultiPolygon:
         thickness: int = 2,
         fill_alpha: float = 0.15,
     ) -> np.ndarray:
-        """Draw all polygons on a copy of image and return it."""
+        """Draw all polygons on a copy of the image.
+
+        Args:
+            image: Source image as a NumPy array.
+            color: Fill, border, and marker color in BGR order.
+            thickness: Polygon border thickness in pixels.
+            fill_alpha: Fill opacity, from ``0.0`` (transparent) to ``1.0``
+                (opaque). A value of ``0.0`` disables the fill.
+
+        Returns:
+            np.ndarray: Copy of the image with all polygon visualizations.
+        """
         canvas = image.copy()
 
         for polygon in self.polygons:

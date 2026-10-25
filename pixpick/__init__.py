@@ -34,117 +34,100 @@ from pixpick.core.point import Point, MultiPoint
 from pixpick.utils import SelectionCancelled, ImageSource
 
 
-
 def box(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Box | Multibox:
-    """
-    Open an interactive window on `source`, drag a rectangle, return a Box.
+    """Open an interactive window to select a rectangular region.
 
-    Parameters
-    ----------
-    source : str | Path | np.ndarray
-        Image file path or BGR numpy array.
-    title : str
-        Window title shown to the user.
-    frame : int
-        0-based frame number to load when source is a video.
+    Args:
+        source (ImageSource): Image file path or BGR NumPy array.
+        title (str): Window title shown to the user.
+        frame (int): Zero-based frame number to load when the source is a video.
 
-    Returns
-    -------
-    Box
+    Returns:
+        Box | Multibox: The selected rectangle or multiple rectangles.
 
-    Raises
-    ------
-    SelectionCancelled
-        If the user pressed Esc.
+    Raises:
+        SelectionCancelled: If the user presses Esc or closes the window.
     """
     return BoxSelector().select(source, title=title, frame=frame)
 
 
 def polygon(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Polygon | MultiPolygon:
-    """
-    Open an interactive window on `source`, click vertices, return a Polygon.
+    """Open an interactive window to select a polygon by clicking vertices.
 
-    Controls: LMB=add point  RMB=undo last  Enter=confirm  Z=clear  Esc=cancel
+    Controls:
+        Left-click adds a point, right-click undoes the last point, Enter confirms,
+        Z clears the selection, and Esc cancels.
 
-    Parameters
-    ----------
-    source : str | Path | np.ndarray
-        Image file path or BGR numpy array.
-    title : str
-        Window title shown to the user.
-    frame : int
-        0-based frame number to load when source is a video.
+    Args:
+        source (ImageSource): Image file path or BGR NumPy array.
+        title (str): Window title shown to the user.
+        frame (int): Zero-based frame number to load when the source is a video.
 
-    Returns
-    -------
-    Polygon
+    Returns:
+        Polygon | MultiPolygon: The selected polygon or multiple polygons.
 
-    Raises
-    ------
-    SelectionCancelled
-        If the user pressed Esc.
+    Raises:
+        SelectionCancelled: If the user presses Esc or closes the window.
     """
     return PolygonSelector().select(source, title=title, frame=frame)
 
 
 def line(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Line | MultiLine:
-    """
-    Open an interactive window on `source`, drag a line, return a Line.
+    """Open an interactive window to select a line by dragging.
 
-    Parameters
-    ----------
-    source : str | Path | np.ndarray
-        Image file path or BGR numpy array.
-    title : str
-        Window title shown to the user.
-    frame : int
-        0-based frame number to load when source is a video.
+    Args:
+        source (ImageSource): Image file path or BGR NumPy array.
+        title (str): Window title shown to the user.
+        frame (int): Zero-based frame number to load when the source is a video.
 
-    Returns
-    -------
-    Line
+    Returns:
+        Line | MultiLine: The selected line or multiple lines.
 
-    Raises
-    ------
-    SelectionCancelled
-        If the user pressed Esc.
+    Raises:
+        SelectionCancelled: If the user presses Esc or closes the window.
     """
     return LineSelector().select(source, title=title, frame=frame)
 
+
 def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point | MultiPoint:
-    """
-    Open an interactive window on `source`, click points, return a Point
-    (one click) or a MultiPoint (several).
+    """Open an interactive window to select foreground and background points.
 
-    Controls: LMB=foreground  Shift+LMB=background  RMB=undo
-              Enter=confirm  Z=clear  Esc=cancel
+    Controls:
+        Left-click adds a foreground point, Shift+left-click adds a background point,
+        right-click undoes the last point, Enter confirms, Z clears, and Esc cancels.
 
-    Parameters
-    ----------
-    source : str | Path | np.ndarray
-        Image file path or BGR numpy array.
-    title : str
-        Window title shown to the user.
-    frame : int
-        0-based frame number to load when source is a video.
+    Args:
+        source (ImageSource): Image file path or BGR NumPy array.
+        title (str): Window title shown to the user.
+        frame (int): Zero-based frame number to load when the source is a video.
 
-    Returns
-    -------
-    Point | MultiPoint
-        The picked coordinates plus their foreground/background labels —
-        unpack straight into SAM with `predictor.predict(**picks.sam)`.
+    Returns:
+        Point | MultiPoint: Picked coordinates and foreground/background labels.
+            The result can be passed directly to SAM with
+            ``predictor.predict(**picks.sam)``.
 
-    Raises
-    ------
-    SelectionCancelled
-        If the user pressed Esc or closed the window.
+    Raises:
+        SelectionCancelled: If the user presses Esc or closes the window.
     """
     return PointSelector().select(source, title=title, frame=frame)
 
+
 def load(path: str) -> Box | Multibox | Polygon | MultiPolygon | Line | MultiLine | Point | MultiPoint:
-    """
-    Load a previously saved selection from a JSON file.
-    Dispatches to Box.load or Polygon.load based on the 'type' field.
+    """Load a previously saved selection from a JSON file.
+
+    The selection class is determined by the JSON ``type`` field.
+
+    Args:
+        path (str): Path to the JSON file containing the saved selection.
+
+    Returns:
+        Box | Multibox | Polygon | MultiPolygon | Line | MultiLine | Point | MultiPoint:
+            The loaded selection object.
+
+    Raises:
+        ValueError: If the JSON file contains an unknown selection type.
+        FileNotFoundError: If the specified file does not exist.
+        json.JSONDecodeError: If the file does not contain valid JSON.
     """
     import json
     from pathlib import Path
