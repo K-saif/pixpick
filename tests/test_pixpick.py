@@ -231,8 +231,10 @@ def sample_image():
 # ======================================================================== #
 
 class TestBoxConstruction:
+    """Test bounding-box construction and validation."""
 
     def test_basic(self, make_box):
+        """Verify that default coordinates are preserved."""
         box = make_box()
         assert box.x1 == 100
         assert box.y1 == 50
@@ -240,20 +242,23 @@ class TestBoxConstruction:
         assert box.y2 == 300
 
     def test_auto_sort_coords(self, make_box):
-        """Drag direction shouldn't matter — x1 < x2 and y1 < y2 always."""
+        """Verify that coordinates are normalized regardless of drag direction."""
         box = make_box()
         assert box.x1 == 100 and box.x2 == 400
         assert box.y1 == 50  and box.y2 == 300
 
     def test_zero_area_raises(self, make_box):
+        """Reject bounding boxes with zero area."""
         with pytest.raises(ValueError, match="zero area"):
             make_box(x2=100)
 
     def test_x_out_of_bounds_raises(self, make_box):
+        """Reject coordinates outside the image width."""
         with pytest.raises(ValueError, match="x coords"):
             make_box(x1=-1)
 
     def test_y_out_of_bounds_raises(self, make_box):
+        """Reject coordinates outside the image height."""
         with pytest.raises(ValueError, match="y coords"):
             make_box(y2=-1)
 
@@ -263,16 +268,20 @@ class TestBoxConstruction:
 # ======================================================================== #
 
 class TestBoxProperties:
+    """Test bounding-box coordinate and representation properties."""
 
     def test_xyxy(self, make_box):
+        """Return coordinates in ``[x1, y1, x2, y2]`` format."""
         box = make_box()
         assert box.xyxy == [100, 50, 400, 300]
 
     def test_xywh(self, make_box):
+        """Return coordinates in ``[x, y, width, height]`` format."""
         box = make_box()
         assert box.xywh == [100, 50, 300, 250]
 
     def test_cxcywh(self, make_box):
+        """Return center coordinates and dimensions."""
         box = make_box()
         cx, cy, w, h = box.cxcywh
         assert cx == 250.0
@@ -281,6 +290,7 @@ class TestBoxProperties:
         assert h  == 250.0
 
     def test_norm(self, make_box):
+        """Return normalized corner coordinates in the unit range."""
         box = make_box()
         n = box.norm
         assert len(n) == 4
@@ -289,20 +299,24 @@ class TestBoxProperties:
         assert pytest.approx(n[1], abs=1e-4) == 50  / 1080
 
     def test_norm_xywh(self, make_box):
+        """Return normalized top-left coordinates and dimensions."""
         box = make_box()
         n = box.norm_xywh
         assert len(n) == 4
         assert all(0.0 <= v <= 1.0 for v in n)
 
     def test_center(self, make_box):
+        """Return the integer center point of the box."""
         box = make_box()
         assert box.center == (250, 175)
 
     def test_area(self, make_box):
+        """Return the box area in pixels."""
         box = make_box()
         assert box.area == 300 * 250
 
     def test_as_numpy_shape_and_dtype(self, make_box):
+        """Return integer corner coordinates as a NumPy array."""
         box = make_box()
         arr = box.as_numpy
         assert arr.shape == (4,)
@@ -310,6 +324,7 @@ class TestBoxProperties:
         assert arr.tolist() == [100, 50, 400, 300]
 
     def test_yolo_region(self, make_box):
+        """Return the four corner points used for YOLO regions."""
         box = make_box()
         assert box.yolo_region == [
             (100, 50),
@@ -319,6 +334,7 @@ class TestBoxProperties:
         ]
 
     def test_yolo_prompt(self, make_box):
+        """Return the box in YOLO prompt array format."""
         box = make_box()
         np.testing.assert_array_equal(
             box.yolo_prompt,
@@ -326,16 +342,19 @@ class TestBoxProperties:
         )
 
     def test_sam(self, make_box):
+        """Return the box in SAM prompt array format."""
         box = make_box()
         np.testing.assert_array_equal(box.sam, np.array([100, 50, 400, 300]))
 
     def test_raw_keys(self, make_box):
+        """Expose all supported representations through ``raw``."""
         box = make_box()
         raw = box.raw
         expected = {"xyxy", "xywh", "cxcywh", "normalized", "normalized_xywh", "numpy"}
         assert expected.issubset(raw.keys())
 
     def test_raw_xyxy_matches(self, make_box):
+        """Keep the raw corner coordinates consistent with ``xyxy``."""
         box = make_box()
         assert box.raw["xyxy"] == box.xyxy
 
@@ -345,8 +364,10 @@ class TestBoxProperties:
 # ======================================================================== #
 
 class TestBoxPersistence:
+    """Test bounding-box serialization and deserialization."""
 
     def test_save_creates_file(self, make_box):
+        """Write a saved bounding box to disk."""
         box = make_box()
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
@@ -357,6 +378,7 @@ class TestBoxPersistence:
             os.unlink(path)
 
     def test_save_json_schema(self, make_box):
+        """Write the expected JSON schema for a bounding box."""
         box = make_box()
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
@@ -371,6 +393,7 @@ class TestBoxPersistence:
             os.unlink(path)
 
     def test_round_trip(self, make_box):
+        """Preserve box data when saving and loading."""
         box = make_box()
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
@@ -384,6 +407,7 @@ class TestBoxPersistence:
             os.unlink(path)
 
     def test_load_wrong_type_raises(self, make_polygon):
+        """Reject loading a non-box selection as a box."""
         polygon = make_polygon()
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
@@ -400,13 +424,16 @@ class TestBoxPersistence:
 # ======================================================================== #
 
 class TestBoxVisualize:
+    """Test rendering bounding boxes onto images."""
 
     def test_returns_same_shape(self, make_box, sample_image):
+        """Preserve the input image shape during visualization."""
         box = make_box()
         vis = box.visualize(sample_image)
         assert vis.shape == sample_image.shape
 
     def test_does_not_mutate_original(self, make_box, sample_image):
+        """Leave the source image unchanged during visualization."""
         box = make_box()
         original = sample_image.copy()
         box.visualize(sample_image)
@@ -419,8 +446,10 @@ class TestBoxVisualize:
 # ======================================================================== #
 
 class TestMultiboxConstruction:
+    """Test multi-box construction and validation."""
 
     def test_basic(self, make_multibox):
+        """Verify the default multi-box coordinates."""
         multibox = make_multibox()
 
         assert multibox.xyxy == [
@@ -429,20 +458,24 @@ class TestMultiboxConstruction:
         ]
 
     def test_holds_box_objects(self, make_multibox):
+        """Store individual selections as ``Box`` objects."""
         multibox = make_multibox()
 
         assert all(isinstance(box, Box) for box in multibox.boxes)
         assert multibox.nboxes == 2
 
     def test_empty_boxes_raises(self, make_multibox):
+        """Reject multi-box selections without any boxes."""
         with pytest.raises(ValueError, match="at least one Box"):
             make_multibox(boxes=[])
 
     def test_raw_coordinates_raise(self, make_multibox):
+        """Reject raw coordinate lists instead of ``Box`` objects."""
         with pytest.raises(TypeError, match="expects Box objects"):
             make_multibox(boxes=[[100, 50, 400, 300]])
 
     def test_mismatched_image_size_raises(self, make_multibox):
+        """Reject boxes with dimensions different from the multi-box."""
         with pytest.raises(ValueError, match="does not match Multibox size"):
             make_multibox(boxes=[
                 Box(x1=10, y1=10, x2=50, y2=50,
@@ -450,6 +483,7 @@ class TestMultiboxConstruction:
             ])
 
     def test_boxes_normalise_reversed_drags(self):
+        """Normalize reversed coordinates in contained boxes."""
         multibox = Multibox(
             boxes=[
                 Box(x1=400, y1=300, x2=100, y2=50,
@@ -468,8 +502,10 @@ class TestMultiboxConstruction:
 # ======================================================================== #
 
 class TestMultiboxProperties:
+    """Test multi-box coordinate and representation properties."""
 
     def test_xyxy(self, make_multibox):
+        """Return all boxes in corner-coordinate format."""
         multibox = make_multibox()
         assert multibox.xyxy == [
             [100, 50, 400, 300],
@@ -477,6 +513,7 @@ class TestMultiboxProperties:
         ]
 
     def test_xywh(self, make_multibox):
+        """Return all boxes in top-left and size format."""
         multibox = make_multibox()
         assert multibox.xywh == [
             [100, 50, 300, 250],
@@ -484,6 +521,7 @@ class TestMultiboxProperties:
         ]
 
     def test_cxcywh(self, make_multibox):
+        """Return all boxes in center-and-size format."""
         multibox = make_multibox()
         assert multibox.cxcywh == [
             [250.0, 175.0, 300.0, 250.0],
@@ -491,17 +529,20 @@ class TestMultiboxProperties:
         ]
 
     def test_norm(self, make_multibox):
+        """Return normalized coordinates for every box."""
         multibox = make_multibox()
         norm = multibox.norm
         assert len(norm) == 2
         assert all(all(0 <= v <= 1 for v in box) for box in norm)
 
     def test_norm_xywh(self, make_multibox):
+        """Return normalized top-left coordinates for every box."""
         multibox = make_multibox()
         norm = multibox.norm_xywh
         assert len(norm) == 2
 
     def test_center(self, make_multibox):
+        """Return the center point of every box."""
         multibox = make_multibox()
         assert multibox.center == [
             (250, 175),
@@ -509,6 +550,7 @@ class TestMultiboxProperties:
         ]
 
     def test_area(self, make_multibox):
+        """Return the area of every box in pixels."""
         multibox = make_multibox()
         assert multibox.area == [
             300 * 250,
@@ -516,16 +558,19 @@ class TestMultiboxProperties:
         ]
 
     def test_as_numpy(self, make_multibox):
+        """Return all box coordinates as an integer NumPy array."""
         multibox = make_multibox()
         arr = multibox.as_numpy
         assert arr.shape == (2, 4)
         assert arr.dtype == np.int32
 
     def test_yolo_region(self, make_multibox):
+        """Return corner points for every YOLO region."""
         multibox = make_multibox()
         assert len(multibox.yolo_region) == 2
 
     def test_yolo_prompt(self, make_multibox):
+        """Return all boxes in YOLO prompt array format."""
         multibox = make_multibox()
         np.testing.assert_array_equal(
             multibox.yolo_prompt,
@@ -536,6 +581,7 @@ class TestMultiboxProperties:
         )
 
     def test_sam(self, make_multibox):
+        """Return all boxes in SAM prompt array format."""
         multibox = make_multibox()
         np.testing.assert_array_equal(
             multibox.sam,
@@ -546,6 +592,7 @@ class TestMultiboxProperties:
         )
 
     def test_raw_keys(self, make_multibox):
+        """Expose all supported multi-box representations through ``raw``."""
         multibox = make_multibox()
         raw = multibox.raw
         expected = {
@@ -563,8 +610,10 @@ class TestMultiboxProperties:
 # ======================================================================== #
 
 class TestMultiboxPersistence:
+    """Test multi-box serialization and deserialization."""
 
     def test_round_trip(self, make_multibox):
+        """Preserve multi-box data when saving and loading."""
         multibox = make_multibox()
 
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
@@ -587,13 +636,16 @@ class TestMultiboxPersistence:
 # ======================================================================== #
 
 class TestMultiboxVisualize:
+    """Test rendering multi-box selections onto images."""
 
     def test_returns_same_shape(self, make_multibox, sample_image):
+        """Preserve the input image shape during visualization."""
         multibox = make_multibox()
         vis = multibox.visualize(sample_image)
         assert vis.shape == sample_image.shape
 
     def test_does_not_mutate_original(self, make_multibox, sample_image):
+        """Leave the source image unchanged during visualization."""
         multibox = make_multibox()
         original = sample_image.copy()
         multibox.visualize(sample_image)
