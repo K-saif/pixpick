@@ -1,14 +1,18 @@
-"""
-pixpick test suite
-------------------
-Tests everything that doesn't require a display (no cv2.imshow).
-The interactive selectors (BoxSelector, PolygonSelector) are excluded
-because CI environments have no display — that logic is covered by the
-backend itself which is independently testable.
+"""Test the non-interactive pixpick API.
 
-Run locally:
-    pip install pytest
-    pytest tests/ -v
+The test suite covers selection objects, coordinate conversions, serialization,
+rendering, and the public loading helpers without opening an OpenCV window.
+
+Tests:
+    The interactive selectors are excluded because CI environments do not
+    provide a display. Their logic is covered by independently testable
+    backend components.
+
+Examples:
+    Run the test suite locally with::
+
+        pip install pytest
+        pytest tests/ -v
 """
 
 import json
@@ -31,7 +35,21 @@ from pixpick import load, polygon
 
 @pytest.fixture
 def make_box():
+    """Provide a factory for constructing standard bounding boxes.
+
+    Returns:
+        Callable[..., Box]: A factory accepting overrides for the default
+        bounding-box values.
+    """
     def _make_box(**kwargs):
+        """Construct a bounding box with optional value overrides.
+
+        Args:
+            **kwargs: Bounding-box fields that replace the fixture defaults.
+
+        Returns:
+            Box: A configured bounding box.
+        """
         defaults = dict(
             x1=100,
             y1=50,
@@ -46,7 +64,21 @@ def make_box():
 
 @pytest.fixture
 def make_multibox():
+    """Provide a factory for constructing standard multi-box selections.
+
+    Returns:
+        Callable[..., Multibox]: A factory accepting overrides for the
+        default multi-box values.
+    """
     def _make_multibox(**kwargs):
+        """Construct a multi-box selection with optional overrides.
+
+        Args:
+            **kwargs: Multi-box fields that replace the fixture defaults.
+
+        Returns:
+            Multibox: A configured multi-box selection.
+        """
         defaults = dict(
             boxes=[
                 Box(
@@ -67,7 +99,21 @@ def make_multibox():
 
 @pytest.fixture
 def make_polygon():
+    """Provide a factory for constructing standard polygons.
+
+    Returns:
+        Callable[..., Polygon]: A factory accepting overrides for the default
+        polygon values.
+    """
     def _make_polygon(**kwargs):
+        """Construct a polygon with optional value overrides.
+
+        Args:
+            **kwargs: Polygon fields that replace the fixture defaults.
+
+        Returns:
+            Polygon: A configured polygon.
+        """
         defaults = dict(
             points=[(100, 50), (400, 50), (400, 300), (100, 300)],
             image_width=1920,
@@ -79,7 +125,21 @@ def make_polygon():
 
 @pytest.fixture
 def make_multipolygon():
+    """Provide a factory for constructing standard multi-polygon selections.
+
+    Returns:
+        Callable[..., MultiPolygon]: A factory accepting overrides for the
+        default multi-polygon values.
+    """
     def _make_multipolygon(**kwargs):
+        """Construct a multi-polygon selection with optional overrides.
+
+        Args:
+            **kwargs: Multi-polygon fields that replace the fixture defaults.
+
+        Returns:
+            MultiPolygon: A configured multi-polygon selection.
+        """
         defaults = dict(
             polygons=[
                 Polygon(
@@ -102,6 +162,11 @@ def make_multipolygon():
 
 @pytest.fixture
 def line():
+    """Provide a standard line selection.
+
+    Returns:
+        Line: A line with two endpoints and 1920x1080 image dimensions.
+    """
     return Line(
         points=[(100, 50), (400, 300)],
         image_width=1920, image_height=1080
@@ -109,6 +174,11 @@ def line():
 
 @pytest.fixture
 def multiline():
+    """Provide a standard multi-line selection.
+
+    Returns:
+        MultiLine: A multi-line selection with two lines.
+    """
     return MultiLine(
         lines=[
             Line(points=[(100, 50), (400, 300)],
@@ -122,10 +192,21 @@ def multiline():
 
 @pytest.fixture
 def point():
+    """Provide a standard point selection.
+
+    Returns:
+        Point: A point at ``(100, 50)`` for a 1920x1080 image.
+    """
     return Point(x=100, y=50, image_width=1920, image_height=1080)
 
 @pytest.fixture
 def multipoint():
+    """Provide a standard multi-point selection.
+
+    Returns:
+        MultiPoint: A multi-point selection containing foreground and
+        background points.
+    """
     return MultiPoint(
         points=[
             Point(x=100, y=50, image_width=1920, image_height=1080,
