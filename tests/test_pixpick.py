@@ -658,12 +658,15 @@ class TestMultiboxVisualize:
 # ======================================================================== #
 
 class TestPolygonConstruction:
+    """Test polygon construction and validation."""
 
     def test_basic(self, make_polygon):
+        """Verify that a default polygon has four vertices."""
         polygon = make_polygon()
         assert polygon.npoints == 4
 
     def test_too_few_points_raises(self, make_polygon):
+        """Reject polygons with fewer than three vertices."""
         with pytest.raises(ValueError, match="at least 3"):
             make_polygon(
                 points=[(0, 0), (100, 100)],
@@ -671,6 +674,7 @@ class TestPolygonConstruction:
                 image_height=1080,)
 
     def test_point_out_of_bounds_raises(self, make_polygon):
+        """Reject polygon vertices outside the image."""
         with pytest.raises(ValueError, match="outside image"):
             make_polygon(
                 points=[(0, 0), (100, 100), (2000, 500)],
@@ -684,31 +688,37 @@ class TestPolygonConstruction:
 # ======================================================================== #
 
 class TestPolygonProperties:
+    """Test polygon coordinate and representation properties."""
 
     def test_as_numpy_shape(self, make_polygon):
+        """Return polygon vertices as an integer NumPy array."""
         polygon = make_polygon()
         arr = polygon.as_numpy
         assert arr.shape == (4, 2)
         assert arr.dtype == np.int32
 
     def test_norm_range(self, make_polygon):
+        """Return normalized vertices within the unit range."""
         polygon = make_polygon()
         for x, y in polygon.norm:
             assert 0.0 <= x <= 1.0
             assert 0.0 <= y <= 1.0
 
     def test_norm_numpy_shape(self, make_polygon):
+        """Return normalized vertices as a float NumPy array."""
         polygon = make_polygon()
         arr = polygon.norm_numpy
         assert arr.shape == (4, 2)
         assert arr.dtype == np.float32
 
     def test_bbox_type(self, make_polygon):
+        """Return the polygon bounding box as a ``Box``."""
         polygon = make_polygon()
         bbox = polygon.bbox
         assert isinstance(bbox, Box)
 
     def test_bbox_values(self, make_polygon):
+        """Calculate the expected axis-aligned bounding box."""
         polygon = make_polygon()
         # polygon is a rectangle (100,50)→(400,300)
         bbox = polygon.bbox
@@ -718,21 +728,25 @@ class TestPolygonProperties:
         assert bbox.y2 == 300
 
     def test_n_points(self, make_polygon):
+        """Return the number of polygon vertices."""
         polygon = make_polygon()
         assert polygon.npoints == 4
 
     def test_to_supervision_key(self, make_polygon):
+        """Expose polygon coordinates under the supervision key."""
         polygon = make_polygon()
         result = polygon.supervision
         assert "polygon" in result
 
     def test_to_supervision_numpy(self, make_polygon):
+        """Expose polygon coordinates as a supervision NumPy array."""
         polygon = make_polygon()
         arr = polygon.supervision["polygon"]
         assert isinstance(arr, np.ndarray)
         assert arr.shape == (4, 2)
 
     def test_raw_keys(self, make_polygon):
+        """Expose all supported polygon representations through ``raw``."""
         polygon = make_polygon()
         raw = polygon.raw
         expected = {"points", "numpy", "normalized", "normalized_numpy", "bbox_xyxy"}
@@ -744,8 +758,10 @@ class TestPolygonProperties:
 # ======================================================================== #
 
 class TestPolygonPersistence:
+    """Test polygon serialization and deserialization."""
 
     def test_round_trip(self, make_polygon):
+        """Preserve polygon data when saving and loading."""
         polygon = make_polygon()
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
@@ -759,6 +775,7 @@ class TestPolygonPersistence:
             os.unlink(path)
 
     def test_save_json_schema(self, make_polygon):
+        """Write the expected JSON schema for a polygon."""
         polygon = make_polygon()
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
@@ -772,6 +789,7 @@ class TestPolygonPersistence:
             os.unlink(path)
 
     def test_load_wrong_type_raises(self, make_box):
+        """Reject loading a non-polygon selection as a polygon."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -788,13 +806,16 @@ class TestPolygonPersistence:
 # ======================================================================== #
 
 class TestPolygonVisualize:
+    """Test rendering polygons onto images."""
 
     def test_returns_same_shape(self, make_polygon, sample_image):
+        """Preserve the input image shape during visualization."""
         polygon = make_polygon()
         vis = polygon.visualize(sample_image)
         assert vis.shape == sample_image.shape
 
     def test_does_not_mutate_original(self, make_polygon, sample_image):
+        """Leave the source image unchanged during visualization."""
         polygon = make_polygon()
         original = sample_image.copy()
         polygon.visualize(sample_image)
@@ -805,12 +826,15 @@ class TestPolygonVisualize:
 # Polygon — construction and properties                         #
 # ======================================================================== #
 class TestMultiPolygonConstruction:
+    """Test multi-polygon construction and validation."""
 
     def test_basic(self, make_multipolygon):
+        """Verify that default multi-polygon data is preserved."""
         multipolygon = make_multipolygon()
         assert multipolygon.npoints == 4
 
     def test_too_few_points_raises(self, make_multipolygon):
+        """Reject multi-polygons containing too few vertices."""
         with pytest.raises(ValueError, match="at least 3"):
             make_multipolygon(
                 points=[(0, 0), (100, 100)],
@@ -818,6 +842,7 @@ class TestMultiPolygonConstruction:
                 image_height=1080,)
 
     def test_point_out_of_bounds_raises(self, make_multipolygon):
+        """Reject multi-polygon vertices outside the image."""
         with pytest.raises(ValueError, match="outside image"):
             make_multipolygon(
                 points=[(0, 0), (100, 100), (2000, 500)],
@@ -831,8 +856,10 @@ class TestMultiPolygonConstruction:
 # MultiPolygon — properties                                                     #
 # ======================================================================== #
 class TestMultiPolygonProperties:
+    """Test multi-polygon coordinate and representation properties."""
 
     def test_as_numpy_shape(self, make_multipolygon):
+        """Return every polygon as an integer NumPy array."""
         multipolygon = make_multipolygon()
 
         arr = multipolygon.as_numpy
@@ -845,6 +872,7 @@ class TestMultiPolygonProperties:
         assert arr[1].dtype == np.int32
 
     def test_norm_range(self, make_multipolygon):
+        """Return normalized vertices within the unit range."""
         multipolygon = make_multipolygon()
 
         for polygon_norm in multipolygon.norm:
@@ -853,6 +881,7 @@ class TestMultiPolygonProperties:
                 assert 0.0 <= y <= 1.0
 
     def test_norm_numpy(self, make_multipolygon):
+        """Return every normalized polygon as a float NumPy array."""
         multipolygon = make_multipolygon()
 
         result = multipolygon.norm_numpy
@@ -865,6 +894,7 @@ class TestMultiPolygonProperties:
         assert result[1].dtype == np.float32
 
     def test_bbox(self, make_multipolygon):
+        """Return the bounding box for every polygon."""
         multipolygon = make_multipolygon()
 
         assert multipolygon.bbox == [
@@ -874,6 +904,7 @@ class TestMultiPolygonProperties:
 
 
     def test_to_supervision(self, make_multipolygon):
+        """Expose every polygon in supervision format."""
         multipolygon = make_multipolygon()
 
         result = multipolygon.supervision
@@ -889,8 +920,10 @@ class TestMultiPolygonProperties:
 # MultiPolygon — persistence                                                     #
 # ======================================================================== #
 class TestMultiPolygonPersistence:
+    """Test multi-polygon serialization and deserialization."""
 
     def test_round_trip(self, make_multipolygon):
+        """Preserve multi-polygon data when saving and loading."""
         multipolygon = make_multipolygon()
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
@@ -904,6 +937,7 @@ class TestMultiPolygonPersistence:
             os.unlink(path)
 
     def test_save_json_schema(self, make_multipolygon):
+        """Write the expected JSON schema for a multi-polygon."""
         multipolygon = make_multipolygon()
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
@@ -917,6 +951,7 @@ class TestMultiPolygonPersistence:
             os.unlink(path)
 
     def test_load_wrong_type_raises(self, make_multibox):
+        """Reject loading a non-multi-polygon selection as a multi-polygon."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -933,13 +968,16 @@ class TestMultiPolygonPersistence:
 # # ======================================================================== #
 
 class TestMultiPolygonVisualize:
+    """Test rendering multi-polygons onto images."""
 
     def test_returns_same_shape(self, make_multipolygon, sample_image):
+        """Preserve the input image shape during visualization."""
         multipolygon = make_multipolygon()
         vis = multipolygon.visualize(sample_image)
         assert vis.shape == sample_image.shape
 
     def test_does_not_mutate_original(self, make_multipolygon, sample_image):
+        """Leave the source image unchanged during visualization."""
         multipolygon = make_multipolygon()
         original = sample_image.copy()
         multipolygon.visualize(sample_image)
