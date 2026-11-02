@@ -823,7 +823,7 @@ class TestPolygonVisualize:
 
 
 # ======================================================================== #
-# Polygon — construction and properties                         #
+# MultiPolygon — construction and properties                         #
 # ======================================================================== #
 class TestMultiPolygonConstruction:
     """Test multi-polygon construction and validation."""
@@ -853,7 +853,7 @@ class TestMultiPolygonConstruction:
 
 
 # ======================================================================== #
-# MultiPolygon — properties                                                     #
+# MultiPolygon — properties                                                #
 # ======================================================================== #
 class TestMultiPolygonProperties:
     """Test multi-polygon coordinate and representation properties."""
@@ -917,7 +917,7 @@ class TestMultiPolygonProperties:
 
 
 # ======================================================================== #
-# MultiPolygon — persistence                                                     #
+# MultiPolygon — persistence                                               #
 # ======================================================================== #
 class TestMultiPolygonPersistence:
     """Test multi-polygon serialization and deserialization."""
@@ -963,9 +963,9 @@ class TestMultiPolygonPersistence:
             os.unlink(path)
 
 
-# # ======================================================================== #
-# # Polygon — visualize                                                       #
-# # ======================================================================== #
+# ======================================================================== #
+# MultiPolygon — visualize                                                 #
+# ======================================================================== #
 
 class TestMultiPolygonVisualize:
     """Test rendering multi-polygons onto images."""
@@ -989,8 +989,10 @@ class TestMultiPolygonVisualize:
 # ======================================================================== #
 
 class TestLoadDispatcher:
+    """Test dispatching saved selections to their concrete types."""
 
     def test_dispatches_box(self, make_box):
+        """Load a saved box through the public dispatcher."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1003,6 +1005,7 @@ class TestLoadDispatcher:
             os.unlink(path)
 
     def test_dispatches_multibox(self, make_multibox):
+        """Load a saved multi-box through the public dispatcher."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1015,6 +1018,7 @@ class TestLoadDispatcher:
             os.unlink(path)
 
     def test_dispatches_polygon(self, make_polygon):
+        """Load a saved polygon through the public dispatcher."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1027,6 +1031,7 @@ class TestLoadDispatcher:
             os.unlink(path)
 
     def test_dispatches_line(self, line):
+        """Load a saved line through the public dispatcher."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1042,19 +1047,24 @@ class TestLoadDispatcher:
 # ======================================================================== #
 
 class TestPointConstruction:
+    """Test point construction and validation."""
 
     def test_basic(self, point):
+        """Verify default point coordinates and label."""
         assert point.xy == (100, 50)
         assert point.label == FOREGROUND
 
     def test_label_defaults_to_foreground(self):
+        """Default an omitted label to foreground."""
         assert Point(x=10, y=10, image_width=100, image_height=100).label == FOREGROUND
 
     def test_out_of_bounds_raises(self):
+        """Reject points outside the image."""
         with pytest.raises(ValueError, match="outside image"):
             Point(x=150, y=10, image_width=100, image_height=100)
 
     def test_invalid_label_raises(self):
+        """Reject labels other than foreground or background."""
         with pytest.raises(ValueError, match="foreground"):
             Point(x=10, y=10, image_width=100, image_height=100, label=7)
 
@@ -1064,33 +1074,40 @@ class TestPointConstruction:
 # ======================================================================== #
 
 class TestPointFormats:
+    """Test point coordinate and representation properties."""
 
     def test_as_numpy(self, point):
+        """Return point coordinates as an integer NumPy array."""
         arr = point.as_numpy
         assert arr.shape == (2,)
         assert arr.dtype == np.int32
         assert arr.tolist() == [100, 50]
 
     def test_norm(self, point):
+        """Return normalized point coordinates."""
         xn, yn = point.norm
         assert xn == pytest.approx(100 / 1920)
         assert yn == pytest.approx(50 / 1080)
 
     def test_norm_numpy(self, point):
+        """Return normalized coordinates as a float NumPy array."""
         arr = point.norm_numpy
         assert arr.shape == (2,)
         assert arr.dtype == np.float32
 
     def test_foreground_flags(self, point):
+        """Identify a foreground point correctly."""
         assert point.is_foreground
         assert not point.is_background
 
     def test_background_flags(self):
+        """Identify a background point correctly."""
         pt = Point(x=10, y=10, image_width=100, image_height=100, label=BACKGROUND)
         assert pt.is_background
         assert not pt.is_foreground
 
     def test_raw_keys(self, point):
+        """Expose all supported point representations through ``raw``."""
         assert set(point.raw) == {
             "xy",
             "label",
@@ -1100,6 +1117,7 @@ class TestPointFormats:
         }
 
     def test_repr(self, point):
+        """Include coordinates and label information in the representation."""
         assert "xy=(100, 50)" in repr(point)
         assert "fg" in repr(point)
 
@@ -1109,8 +1127,10 @@ class TestPointFormats:
 # ======================================================================== #
 
 class TestPointAdapters:
+    """Test point adapters for supported frameworks."""
 
     def test_sam_shapes(self, point):
+        """Return SAM prompt arrays with the expected shapes and dtypes."""
         prompt = point.sam
         assert prompt["point_coords"].shape == (1, 2)
         assert prompt["point_coords"].dtype == np.float32
@@ -1118,11 +1138,13 @@ class TestPointAdapters:
         assert prompt["point_labels"].dtype == np.int32
 
     def test_sam_values(self, point):
+        """Return the expected values in the SAM prompt."""
         prompt = point.sam
         assert prompt["point_coords"].tolist() == [[100.0, 50.0]]
         assert prompt["point_labels"].tolist() == [1]
 
     def test_supervision_shape(self, point):
+        """Return point coordinates in supervision format."""
         assert point.supervision["xy"].shape == (1, 1, 2)
 
 
@@ -1131,8 +1153,10 @@ class TestPointAdapters:
 # ======================================================================== #
 
 class TestPointRescale:
+    """Test rescaling points to different image dimensions."""
 
     def test_halves_coordinates(self):
+        """Scale coordinates proportionally to a smaller image."""
         pt = Point(x=100, y=200, image_width=1000, image_height=1000)
         smaller = pt.rescale(500, 500)
         assert smaller.xy == (50, 100)
@@ -1140,18 +1164,22 @@ class TestPointRescale:
         assert smaller.image_height == 500
 
     def test_keeps_label(self):
+        """Preserve the point label while rescaling."""
         pt = Point(x=10, y=10, image_width=100, image_height=100, label=BACKGROUND)
         assert pt.rescale(50, 50).label == BACKGROUND
 
     def test_does_not_mutate_original(self, point):
+        """Leave the original point unchanged while rescaling."""
         point.rescale(96, 54)
         assert point.xy == (100, 50)
 
     def test_stays_in_bounds(self):
+        """Keep a point on the image boundary after rescaling."""
         pt = Point(x=1000, y=1000, image_width=1000, image_height=1000)
         assert pt.rescale(640, 640).xy == (640, 640)
 
     def test_invalid_size_raises(self, point):
+        """Reject non-positive target dimensions."""
         with pytest.raises(ValueError, match="must be positive"):
             point.rescale(0, 100)
 
@@ -1161,8 +1189,10 @@ class TestPointRescale:
 # ======================================================================== #
 
 class TestPointPersistence:
+    """Test point serialization and deserialization."""
 
     def test_save_json_schema(self, point):
+        """Write the expected JSON schema for a point."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1175,6 +1205,7 @@ class TestPointPersistence:
             os.unlink(path)
 
     def test_round_trip(self, point):
+        """Preserve point data when saving and loading."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1187,6 +1218,7 @@ class TestPointPersistence:
             os.unlink(path)
 
     def test_load_wrong_type_raises(self, make_box):
+        """Reject loading a non-point selection as a point."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1197,6 +1229,7 @@ class TestPointPersistence:
             os.unlink(path)
 
     def test_dispatches_through_pixpick_load(self, point):
+        """Load a saved point through the public dispatcher."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1213,20 +1246,25 @@ class TestPointPersistence:
 # ======================================================================== #
 
 class TestPointVisualize:
+    """Test rendering points onto images."""
 
     def test_returns_same_shape(self, point, sample_image):
+        """Preserve the input image shape during visualization."""
         assert point.visualize(sample_image).shape == sample_image.shape
 
     def test_does_not_mutate_original(self, point, sample_image):
+        """Leave the source image unchanged during visualization."""
         before = sample_image.copy()
         point.visualize(sample_image)
         np.testing.assert_array_equal(sample_image, before)
 
     def test_foreground_draws_green(self, point, sample_image):
+        """Render foreground points in green."""
         canvas = point.visualize(sample_image)
         assert tuple(canvas[50, 100]) == (0, 255, 0)
 
     def test_background_draws_red(self, sample_image):
+        """Render background points in red."""
         pt = Point(x=100, y=50, image_width=1920, image_height=1080, label=BACKGROUND)
         canvas = pt.visualize(sample_image)
         assert tuple(canvas[50, 100]) == (0, 0, 255)
@@ -1237,16 +1275,20 @@ class TestPointVisualize:
 # ======================================================================== #
 
 class TestMultiPointConstruction:
+    """Test multi-point construction and validation."""
 
     def test_holds_point_objects(self, multipoint):
+        """Store individual selections as ``Point`` objects."""
         assert all(isinstance(pt, Point) for pt in multipoint.points)
         assert multipoint.npoints == 3
 
     def test_empty_points_raises(self):
+        """Reject multi-point selections without any points."""
         with pytest.raises(ValueError, match="at least one Point"):
             MultiPoint(points=[], image_width=1920, image_height=1080)
 
     def test_raw_coordinates_raise(self):
+        """Reject raw coordinate pairs instead of ``Point`` objects."""
         with pytest.raises(TypeError, match="expects Point objects"):
             MultiPoint(
                 points=[(100, 50)],
@@ -1255,6 +1297,7 @@ class TestMultiPointConstruction:
             )
 
     def test_mismatched_image_size_raises(self):
+        """Reject points with dimensions different from the multi-point."""
         with pytest.raises(ValueError, match="does not match MultiPoint size"):
             MultiPoint(
                 points=[Point(x=10, y=10, image_width=640, image_height=480)],
@@ -1268,29 +1311,36 @@ class TestMultiPointConstruction:
 # ======================================================================== #
 
 class TestMultiPointProperties:
+    """Test multi-point coordinate and representation properties."""
 
     def test_xy(self, multipoint):
+        """Return coordinates for every point."""
         assert multipoint.xy == [(100, 50), (400, 300), (800, 600)]
 
     def test_labels(self, multipoint):
+        """Return labels for every point."""
         assert multipoint.labels == [1, 0, 1]
 
     def test_as_numpy(self, multipoint):
+        """Return all point coordinates as an integer NumPy array."""
         arr = multipoint.as_numpy
         assert arr.shape == (3, 2)
         assert arr.dtype == np.int32
 
     def test_norm_range(self, multipoint):
+        """Return normalized coordinates within the unit range."""
         for xn, yn in multipoint.norm:
             assert 0.0 <= xn <= 1.0
             assert 0.0 <= yn <= 1.0
 
     def test_norm_numpy(self, multipoint):
+        """Return normalized coordinates as a float NumPy array."""
         arr = multipoint.norm_numpy
         assert arr.shape == (3, 2)
         assert arr.dtype == np.float32
 
     def test_raw_keys(self, multipoint):
+        """Expose all supported multi-point representations through ``raw``."""
         assert set(multipoint.raw) == {
             "xy",
             "labels",
@@ -1303,6 +1353,7 @@ class TestMultiPointProperties:
         }
 
     def test_repr(self, multipoint):
+        """Include point and label counts in the representation."""
         text = repr(multipoint)
         assert "npoints=3" in text
         assert "fg=2" in text
@@ -1314,8 +1365,10 @@ class TestMultiPointProperties:
 # ======================================================================== #
 
 class TestMultiPointGeometry:
+    """Test geometric operations on multi-point selections."""
 
     def test_centroid(self):
+        """Calculate the centroid of the selected points."""
         mp = MultiPoint(
             points=[
                 Point(x=0, y=0, image_width=100, image_height=100),
@@ -1327,12 +1380,14 @@ class TestMultiPointGeometry:
         assert mp.centroid == (5, 10)
 
     def test_bbox_is_a_box(self, multipoint):
+        """Return the enclosing points as a ``Box``."""
         bbox = multipoint.bbox
         assert isinstance(bbox, Box)
         assert bbox.xyxy == [100, 50, 800, 600]
         assert bbox.image_width == 1920
 
     def test_bbox_of_collinear_points_raises(self):
+        """Reject a bounding box with no enclosed area."""
         mp = MultiPoint(
             points=[
                 Point(x=10, y=10, image_width=100, image_height=100),
@@ -1345,11 +1400,13 @@ class TestMultiPointGeometry:
             mp.bbox
 
     def test_as_polygon(self, multipoint):
+        """Convert multi-point coordinates to a ``Polygon``."""
         polygon = multipoint.as_polygon
         assert isinstance(polygon, Polygon)
         assert polygon.points == multipoint.xy
 
     def test_as_polygon_needs_three_points(self):
+        """Reject polygon conversion when fewer than three points exist."""
         mp = MultiPoint(
             points=[
                 Point(x=10, y=10, image_width=100, image_height=100),
@@ -1367,17 +1424,21 @@ class TestMultiPointGeometry:
 # ======================================================================== #
 
 class TestMultiPointLabels:
+    """Test foreground and background point filtering."""
 
     def test_foreground_returns_points(self, multipoint):
+        """Return all foreground points."""
         fg = multipoint.foreground
         assert all(isinstance(pt, Point) for pt in fg)
         assert [pt.xy for pt in fg] == [(100, 50), (800, 600)]
 
     def test_background_returns_points(self, multipoint):
+        """Return all background points."""
         bg = multipoint.background
         assert [pt.xy for pt in bg] == [(400, 300)]
 
     def test_counts(self, multipoint):
+        """Count foreground and background points."""
         assert multipoint.n_foreground == 2
         assert multipoint.n_background == 1
         assert multipoint.n_foreground + multipoint.n_background == multipoint.npoints
@@ -1388,8 +1449,10 @@ class TestMultiPointLabels:
 # ======================================================================== #
 
 class TestMultiPointAdapters:
+    """Test multi-point adapters for supported frameworks."""
 
     def test_sam_shapes(self, multipoint):
+        """Return SAM prompt arrays with matching shapes and dtypes."""
         prompt = multipoint.sam
         assert prompt["point_coords"].shape == (3, 2)
         assert prompt["point_coords"].dtype == np.float32
@@ -1397,13 +1460,16 @@ class TestMultiPointAdapters:
         assert prompt["point_labels"].dtype == np.int32
 
     def test_sam_labels_values(self, multipoint):
+        """Return the expected labels in the SAM prompt."""
         assert multipoint.sam_labels.tolist() == [1, 0, 1]
 
     def test_sam_arrays_stay_parallel(self, multipoint):
+        """Keep SAM coordinates and labels aligned."""
         prompt = multipoint.sam
         assert len(prompt["point_coords"]) == len(prompt["point_labels"])
 
     def test_supervision_shape(self, multipoint):
+        """Return multi-point coordinates in supervision format."""
         assert multipoint.supervision["xy"].shape == (1, 3, 2)
 
 
@@ -1412,16 +1478,20 @@ class TestMultiPointAdapters:
 # ======================================================================== #
 
 class TestMultiPointRescale:
+    """Test rescaling multi-point selections."""
 
     def test_halves_coordinates(self, multipoint):
+        """Scale all coordinates proportionally to a smaller image."""
         smaller = multipoint.rescale(960, 540)
         assert smaller.xy == [(50, 25), (200, 150), (400, 300)]
         assert smaller.image_width == 960
 
     def test_keeps_labels(self, multipoint):
+        """Preserve labels while rescaling all points."""
         assert multipoint.rescale(960, 540).labels == [1, 0, 1]
 
     def test_does_not_mutate_original(self, multipoint):
+        """Leave the original selection unchanged while rescaling."""
         before = multipoint.xy
         multipoint.rescale(96, 54)
         assert multipoint.xy == before
@@ -1432,8 +1502,10 @@ class TestMultiPointRescale:
 # ======================================================================== #
 
 class TestMultiPointPersistence:
+    """Test multi-point serialization and deserialization."""
 
     def test_save_json_schema(self, multipoint):
+        """Write the expected JSON schema for a multi-point selection."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1445,6 +1517,7 @@ class TestMultiPointPersistence:
             os.unlink(path)
 
     def test_round_trip(self, multipoint):
+        """Preserve multi-point data when saving and loading."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1457,6 +1530,7 @@ class TestMultiPointPersistence:
             os.unlink(path)
 
     def test_load_wrong_type_raises(self, point):
+        """Reject loading a point selection as a multi-point selection."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1467,6 +1541,7 @@ class TestMultiPointPersistence:
             os.unlink(path)
 
     def test_dispatches_through_pixpick_load(self, multipoint):
+        """Load a saved multi-point selection through the dispatcher."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1483,16 +1558,20 @@ class TestMultiPointPersistence:
 # ======================================================================== #
 
 class TestMultiPointVisualize:
+    """Test rendering multi-point selections onto images."""
 
     def test_returns_same_shape(self, multipoint, sample_image):
+        """Preserve the input image shape during visualization."""
         assert multipoint.visualize(sample_image).shape == sample_image.shape
 
     def test_does_not_mutate_original(self, multipoint, sample_image):
+        """Leave the source image unchanged during visualization."""
         before = sample_image.copy()
         multipoint.visualize(sample_image)
         np.testing.assert_array_equal(sample_image, before)
 
     def test_draws_foreground_and_background_colors(self, multipoint, sample_image):
+        """Render foreground and background points with distinct colors."""
         canvas = multipoint.visualize(sample_image)
         assert tuple(canvas[50, 100]) == (0, 255, 0)     # foreground → green
         assert tuple(canvas[300, 400]) == (0, 0, 255)    # background → red
@@ -1503,16 +1582,20 @@ class TestMultiPointVisualize:
 # ======================================================================== #
 
 class TestMultiLineConstruction:
+    """Test multi-line construction and validation."""
 
     def test_holds_line_objects(self, multiline):
+        """Store individual selections as ``Line`` objects."""
         assert all(isinstance(line, Line) for line in multiline.lines)
         assert multiline.nlines == 2
 
     def test_empty_lines_raises(self):
+        """Reject multi-line selections without any lines."""
         with pytest.raises(ValueError, match="at least one Line"):
             MultiLine(lines=[], image_width=1920, image_height=1080)
 
     def test_raw_coordinates_raise(self):
+        """Reject raw coordinate pairs instead of ``Line`` objects."""
         with pytest.raises(TypeError, match="expects Line objects"):
             MultiLine(
                 lines=[[(100, 50), (400, 300)]],
@@ -1521,6 +1604,7 @@ class TestMultiLineConstruction:
             )
 
     def test_mismatched_image_size_raises(self):
+        """Reject lines with dimensions different from the multi-line."""
         with pytest.raises(ValueError, match="does not match MultiLine size"):
             MultiLine(
                 lines=[Line(points=[(10, 10), (50, 50)],
@@ -1535,47 +1619,58 @@ class TestMultiLineConstruction:
 # ======================================================================== #
 
 class TestMultiLineProperties:
+    """Test multi-line coordinate and representation properties."""
 
     def test_points(self, multiline):
+        """Return endpoints for every line."""
         assert multiline.points == [
             [(100, 50), (400, 300)],
             [(500, 200), (800, 600)],
         ]
 
     def test_as_numpy(self, multiline):
+        """Return line endpoints as integer NumPy arrays."""
         arr = multiline.as_numpy
         assert arr.shape == (2, 2, 2)
         assert arr.dtype == np.int32
 
     def test_norm_numpy(self, multiline):
+        """Return normalized line endpoints as float NumPy arrays."""
         arr = multiline.norm_numpy
         assert arr.shape == (2, 2, 2)
         assert arr.dtype == np.float32
 
     def test_norm_range(self, multiline):
+        """Return normalized endpoints within the unit range."""
         for line in multiline.norm:
             for xn, yn in line:
                 assert 0.0 <= xn <= 1.0
                 assert 0.0 <= yn <= 1.0
 
     def test_center(self, multiline):
+        """Return the midpoint of every line."""
         assert multiline.center == [(250, 175), (650, 400)]
 
     def test_start_and_end(self, multiline):
+        """Return start and end points for every line."""
         assert multiline.start == [(100, 50), (500, 200)]
         assert multiline.end == [(400, 300), (800, 600)]
 
     def test_length_matches_each_line(self, multiline):
+        """Return one length value for each line."""
         assert multiline.length == [line.length for line in multiline.lines]
 
     def test_vector(self, multiline):
+        """Return the direction vector for every line."""
         assert multiline.vector == [(300, 250), (300, 400)]
 
     def test_horizontal_and_vertical(self, multiline):
+        """Identify horizontal and vertical line orientations."""
         assert len(multiline.horizontal) == 2
         assert len(multiline.vertical) == 2
 
     def test_raw_keys(self, multiline):
+        """Expose all supported multi-line representations through ``raw``."""
         assert set(multiline.raw) == {
             "points",
             "numpy",
@@ -1594,8 +1689,10 @@ class TestMultiLineProperties:
 # ======================================================================== #
 
 class TestMultiLinePersistence:
+    """Test multi-line serialization and deserialization."""
 
     def test_save_json_schema(self, multiline):
+        """Write the expected JSON schema for a multi-line selection."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1607,6 +1704,7 @@ class TestMultiLinePersistence:
             os.unlink(path)
 
     def test_round_trip(self, multiline):
+        """Preserve multi-line data when saving and loading."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1618,6 +1716,7 @@ class TestMultiLinePersistence:
             os.unlink(path)
 
     def test_load_wrong_type_raises(self, line):
+        """Reject loading a line selection as a multi-line selection."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1628,6 +1727,7 @@ class TestMultiLinePersistence:
             os.unlink(path)
 
     def test_dispatches_through_pixpick_load(self, multiline):
+        """Load a saved multi-line selection through the dispatcher."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
@@ -1644,11 +1744,14 @@ class TestMultiLinePersistence:
 # ======================================================================== #
 
 class TestMultiLineVisualize:
+    """Test rendering multi-line selections onto images."""
 
     def test_returns_same_shape(self, multiline, sample_image):
+        """Preserve the input image shape during visualization."""
         assert multiline.visualize(sample_image).shape == sample_image.shape
 
     def test_does_not_mutate_original(self, multiline, sample_image):
+        """Leave the source image unchanged during visualization."""
         before = sample_image.copy()
         multiline.visualize(sample_image)
         np.testing.assert_array_equal(sample_image, before)
@@ -1659,8 +1762,10 @@ class TestMultiLineVisualize:
 # ======================================================================== #
 
 class TestMultiPolygonConstruction:
+    """Test rejection of raw coordinates in multi-polygons."""
 
     def test_raw_coordinates_raise(self):
+        """Reject raw coordinate lists instead of ``Polygon`` objects."""
         with pytest.raises(TypeError, match="expects Polygon objects"):
             MultiPolygon(
                 polygons=[[(100, 50), (400, 50), (400, 300)]],
