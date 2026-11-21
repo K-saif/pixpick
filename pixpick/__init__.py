@@ -21,8 +21,14 @@ Quick start
     # Save and reload either type
     region.save("zone.json")
     region = pixpick.load("zone.json")
+
+    # In a Jupyter or VS Code notebook (requires `pip install ipympl` and a
+    # `%matplotlib widget` cell before calling pixpick):
+    region = pixpick.box("frame.jpg", backend="notebook")
 """
 from __future__ import annotations
+from pixpick.backends import resolve_backend
+from pixpick.backends.base import BaseBackend
 from pixpick.selectors.box_picker import BoxSelector
 from pixpick.selectors.polygon_picker import PolygonSelector
 from pixpick.selectors.line_picker import LineSelector
@@ -34,24 +40,31 @@ from pixpick.core.point import Point, MultiPoint
 from pixpick.utils import SelectionCancelled, ImageSource
 
 
-def box(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Box | Multibox:
+def box(source: ImageSource, title: str = "pixpick", frame: int = 0,
+        backend: str | BaseBackend = "cv2") -> Box | Multibox:
     """Open an interactive window to select a rectangular region.
 
     Args:
         source (ImageSource): Image file path or BGR NumPy array.
         title (str): Window title shown to the user.
         frame (int): Zero-based frame number to load when the source is a video.
+        backend (str | BaseBackend): UI backend to use: ``"cv2"`` for a
+            desktop window (default) or ``"notebook"`` for the Matplotlib
+            notebook backend. A ``BaseBackend`` instance may also be passed.
 
     Returns:
         Box | Multibox: The selected rectangle or multiple rectangles.
 
     Raises:
         SelectionCancelled: If the user presses Esc or closes the window.
+        RuntimeError: If ``backend="notebook"`` while the interactive ipympl
+            Matplotlib backend is not active, or on Google Colab.
     """
-    return BoxSelector().select(source, title=title, frame=frame)
+    return BoxSelector(backend=resolve_backend(backend)).select(source, title=title, frame=frame)
 
 
-def polygon(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Polygon | MultiPolygon:
+def polygon(source: ImageSource, title: str = "pixpick", frame: int = 0,
+            backend: str | BaseBackend = "cv2") -> Polygon | MultiPolygon:
     """Open an interactive window to select a polygon by clicking vertices.
 
     Controls:
@@ -62,34 +75,46 @@ def polygon(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Poly
         source (ImageSource): Image file path or BGR NumPy array.
         title (str): Window title shown to the user.
         frame (int): Zero-based frame number to load when the source is a video.
+        backend (str | BaseBackend): UI backend to use: ``"cv2"`` for a
+            desktop window (default) or ``"notebook"`` for the Matplotlib
+            notebook backend. A ``BaseBackend`` instance may also be passed.
 
     Returns:
         Polygon | MultiPolygon: The selected polygon or multiple polygons.
 
     Raises:
         SelectionCancelled: If the user presses Esc or closes the window.
+        RuntimeError: If ``backend="notebook"`` while the interactive ipympl
+            Matplotlib backend is not active, or on Google Colab.
     """
-    return PolygonSelector().select(source, title=title, frame=frame)
+    return PolygonSelector(backend=resolve_backend(backend)).select(source, title=title, frame=frame)
 
 
-def line(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Line | MultiLine:
+def line(source: ImageSource, title: str = "pixpick", frame: int = 0,
+         backend: str | BaseBackend = "cv2") -> Line | MultiLine:
     """Open an interactive window to select a line by dragging.
 
     Args:
         source (ImageSource): Image file path or BGR NumPy array.
         title (str): Window title shown to the user.
         frame (int): Zero-based frame number to load when the source is a video.
+        backend (str | BaseBackend): UI backend to use: ``"cv2"`` for a
+            desktop window (default) or ``"notebook"`` for the Matplotlib
+            notebook backend. A ``BaseBackend`` instance may also be passed.
 
     Returns:
         Line | MultiLine: The selected line or multiple lines.
 
     Raises:
         SelectionCancelled: If the user presses Esc or closes the window.
+        RuntimeError: If ``backend="notebook"`` while the interactive ipympl
+            Matplotlib backend is not active, or on Google Colab.
     """
-    return LineSelector().select(source, title=title, frame=frame)
+    return LineSelector(backend=resolve_backend(backend)).select(source, title=title, frame=frame)
 
 
-def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point | MultiPoint:
+def point(source: ImageSource, title: str = "pixpick", frame: int = 0,
+          backend: str | BaseBackend = "cv2") -> Point | MultiPoint:
     """Open an interactive window to select foreground and background points.
 
     Controls:
@@ -100,6 +125,9 @@ def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point 
         source (ImageSource): Image file path or BGR NumPy array.
         title (str): Window title shown to the user.
         frame (int): Zero-based frame number to load when the source is a video.
+        backend (str | BaseBackend): UI backend to use: ``"cv2"`` for a
+            desktop window (default) or ``"notebook"`` for the Matplotlib
+            notebook backend. A ``BaseBackend`` instance may also be passed.
 
     Returns:
         Point | MultiPoint: Picked coordinates and foreground/background labels.
@@ -108,8 +136,10 @@ def point(source: ImageSource, title: str = "pixpick", frame: int = 0) -> Point 
 
     Raises:
         SelectionCancelled: If the user presses Esc or closes the window.
+        RuntimeError: If ``backend="notebook"`` while the interactive ipympl
+            Matplotlib backend is not active, or on Google Colab.
     """
-    return PointSelector().select(source, title=title, frame=frame)
+    return PointSelector(backend=resolve_backend(backend)).select(source, title=title, frame=frame)
 
 
 def load(path: str) -> Box | Multibox | Polygon | MultiPolygon | Line | MultiLine | Point | MultiPoint:
@@ -153,6 +183,30 @@ def load(path: str) -> Box | Multibox | Polygon | MultiPolygon | Line | MultiLin
         raise ValueError(f"Unknown selection type in JSON: '{sel_type}'")
 
 
+def __getattr__(name: str):
+    """Lazily import optional classes on first attribute access.
+
+    Keeps Matplotlib an optional dependency: ``pixpick.NotebookBackend``
+    only imports ``pixpick.backends.notebook_backend`` (and therefore
+    Matplotlib) when it is actually accessed.
+
+    Args:
+        name (str): Attribute name being accessed.
+
+    Returns:
+        type: The requested class, for example ``NotebookBackend``.
+
+    Raises:
+        AttributeError: If the module has no attribute with that name.
+    """
+    if name == "NotebookBackend":
+        from pixpick.backends.notebook_backend import NotebookBackend
+
+        return NotebookBackend
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 __all__ = [
     "box",
     "polygon",
@@ -172,4 +226,5 @@ __all__ = [
     "LineSelector",
     "PointSelector",
     "SelectionCancelled",
+    "NotebookBackend",
 ]
