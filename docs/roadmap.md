@@ -21,7 +21,7 @@
 
 - `Point` selector — click foreground/background points for SAM2 / SAM3 ✅
 - `Perspective` selector — 4-corner pick for BEV `sv.ViewTransformer`
-- `NotebookBackend` — Matplotlib-based, works in Jupyter and Colab
+- `NotebookBackend` — Matplotlib-based, works in Jupyter and VS Code notebooks (Colab unsupported: no ipympl) ✅
 - `GradioBackend` — works on headless servers and SSH sessions
 
 
